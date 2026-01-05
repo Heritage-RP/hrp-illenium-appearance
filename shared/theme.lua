@@ -1,6 +1,21 @@
 Config.Theme = {
-    currentTheme = "qb-core",
+    currentTheme = "pip-boy",
     themes = {
+        {
+            -- HRP Pip-Boy Terminal Theme (matches hrp-character-selector)
+            id = "pip-boy",
+            borderRadius = "0px",
+            fontColor = "26, 255, 128",
+            fontColorHover = "26, 255, 128",
+            fontColorSelected = "5, 15, 8",
+            fontFamily = "Share Tech Mono",
+            primaryBackground = "5, 15, 8",
+            primaryBackgroundSelected = "26, 255, 128",
+            secondaryBackground = "10, 30, 15",
+            scaleOnHover = false,
+            sectionFontWeight = "normal",
+            smoothBackgroundTransition = false
+        },
         {
             id = "default",
             borderRadius = "4px",

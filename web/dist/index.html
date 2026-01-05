@@ -2,16 +2,118 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/src/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>UI</title>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/src/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UI</title>
+  <!-- HRP Pip-Boy Theme Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    /* HRP Pip-Boy Terminal Theme Enhancements */
+    :root {
+      --pip-green: #1aff80;
+      --pip-green-dim: #0d7a3e;
+      --pip-green-glow: rgba(26, 255, 128, 0.6);
+      --pip-green-dark: #0a3d1f;
+      --terminal-bg: rgba(5, 15, 8, 0.95);
+      --terminal-bg-light: rgba(10, 30, 15, 0.9);
+      --terminal-border: rgba(26, 255, 128, 0.3);
+    }
+
+    /* Terminal glow for containers */
+    body.pip-boy-theme [class*="container"],
+    body.pip-boy-theme [class*="section"],
+    body.pip-boy-theme [class*="modal"],
+    body.pip-boy-theme [class*="wrapper"] {
+      box-shadow: 0 0 20px rgba(26, 255, 128, 0.2), inset 0 0 10px rgba(26, 255, 128, 0.03);
+      border-color: rgba(26, 255, 128, 0.3) !important;
+    }
+
+    /* Text glow effect */
+    body.pip-boy-theme h1,
+    body.pip-boy-theme h2,
+    body.pip-boy-theme h3,
+    body.pip-boy-theme [class*="title"],
+    body.pip-boy-theme [class*="header"] {
+      text-shadow: 0 0 5px rgba(26, 255, 128, 0.4), 0 0 10px rgba(26, 255, 128, 0.2);
+    }
+
+    /* Custom scrollbar for Pip-Boy theme */
+    body.pip-boy-theme ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    body.pip-boy-theme ::-webkit-scrollbar-track {
+      background: rgba(5, 15, 8, 0.95);
+      border: 1px solid rgba(13, 122, 62, 0.5);
+    }
+
+    body.pip-boy-theme ::-webkit-scrollbar-thumb {
+      background: rgba(13, 122, 62, 0.8);
+      border: 1px solid rgba(26, 255, 128, 0.5);
+    }
+
+    body.pip-boy-theme ::-webkit-scrollbar-thumb:hover {
+      background: rgba(26, 255, 128, 0.8);
+    }
+
+    /* Button hover glow */
+    body.pip-boy-theme button:hover,
+    body.pip-boy-theme [class*="btn"]:hover {
+      box-shadow: 0 0 15px rgba(26, 255, 128, 0.4);
+    }
+  </style>
   <script type="module" crossorigin src="./assets/index.b8e72b46.js"></script>
+  <script>
+    // Apply pip-boy theme class on page load
+    (function () {
+      // Check theme periodically until it's set
+      function checkAndApplyTheme() {
+        // Try to detect pip-boy theme from any rendered elements or stored config
+        const observer = new MutationObserver(function (mutations) {
+          // Look for elements that indicate pip-boy theme colors
+          const elements = document.querySelectorAll('*');
+          for (let el of elements) {
+            const style = window.getComputedStyle(el);
+            const bgColor = style.backgroundColor;
+            // Check for pip-boy green tones in backgrounds
+            if (bgColor && (bgColor.includes('26, 255, 128') || bgColor.includes('5, 15, 8') || bgColor.includes('10, 30, 15'))) {
+              document.body.classList.add('pip-boy-theme');
+              observer.disconnect();
+              return;
+            }
+          }
+        });
+
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['style']
+        });
+
+        // Also apply immediately if theme.lua sets pip-boy as currentTheme
+        // The NUI will fetch theme config, we'll just always enable it since it's configured
+        setTimeout(function () {
+          document.body.classList.add('pip-boy-theme');
+        }, 100);
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkAndApplyTheme);
+      } else {
+        checkAndApplyTheme();
+      }
+    })();
+  </script>
 </head>
 
 <body>
-    <div id="root"></div>
-    
+  <div id="root"></div>
+
 </body>
 
 </html>
