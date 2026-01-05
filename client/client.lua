@@ -107,13 +107,139 @@ function SetInitialClothes(initial)
     ClearPedDecorations(ped)
 end
 
+-- Clothing lists for character creation
+local ClotheListPropsStart = {
+    ["hat"] = {-99, -99},
+    ["glasses"] = {-99, -99},
+    ["earrings"] = {-99, -99},
+    ["watch"] = {-99, -99},
+    ["bracelet"] = {-99, -99},
+}
+
+local ClotheListComponentsStart = {
+    ["mask"] = {-99, -99},
+    ["chain"] = {-99, -99},
+    ["undershirt"] = {-99, -99},
+    ["jacket"] = {-99, -99},
+    ["bodyarmor"] = {-99, -99},
+    ["bag"] = {-99, -99},
+    ["pants"] = {-99, -99},
+    ["shoes"] = {-99, -99},
+    ["gloves"] = {-99, -99}, 
+}
+
+local function AddToListComponentStart(clothing)
+    if clothing.component_id == 1 then
+        ClotheListComponentsStart["mask"] = {clothing.drawable, clothing.texture}
+    elseif clothing.component_id == 7 then
+        ClotheListComponentsStart["chain"] = {clothing.drawable, clothing.texture}
+    elseif clothing.component_id == 8 then
+        ClotheListComponentsStart["undershirt"] = {clothing.drawable, clothing.texture}
+    elseif clothing.component_id == 11 then
+        ClotheListComponentsStart["jacket"] = {clothing.drawable, clothing.texture}
+    elseif clothing.component_id == 9 then
+        ClotheListComponentsStart["bodyarmor"] = {clothing.drawable, clothing.texture}
+    elseif clothing.component_id == 5 then
+        ClotheListComponentsStart["bag"] = {clothing.drawable, clothing.texture}
+    elseif clothing.component_id == 4 then
+        ClotheListComponentsStart["pants"] = {clothing.drawable, clothing.texture}
+    elseif clothing.component_id == 6 then
+        ClotheListComponentsStart["shoes"] = {clothing.drawable, clothing.texture}
+    elseif clothing.component_id == 3 then
+        ClotheListComponentsStart["gloves"] = {clothing.drawable, clothing.texture}
+    end
+end
+
+local function AddToListPropsStart(clothing)
+    if clothing.prop_id == 0 then
+        ClotheListPropsStart["hat"] = {clothing.drawable, clothing.texture}
+    elseif clothing.prop_id == 1 then
+        ClotheListPropsStart["glasses"] = {clothing.drawable, clothing.texture}
+    elseif clothing.prop_id == 2 then
+        ClotheListPropsStart["earrings"] = {clothing.drawable, clothing.texture}
+    elseif clothing.prop_id == 6 then
+        ClotheListPropsStart["watch"] = {clothing.drawable, clothing.texture}
+    elseif clothing.prop_id == 7 then
+        ClotheListPropsStart["bracelet"] = {clothing.drawable, clothing.texture}
+    end
+end
+
+-- Callbacks for hrp-item-clothes
+lib.callback.register('hrp-item-clothes:GetClothingListProp', function()
+    return ClotheListPropsStart
+end)
+
+lib.callback.register('hrp-item-clothes:GetClothingListComp', function()
+    return ClotheListComponentsStart
+end)
+
 function InitializeCharacter(gender, onSubmit, onCancel)
     SetInitialClothes(Config.InitialPlayerClothes[gender])
     local config = getNewCharacterConfig()
     TriggerServerEvent("illenium-appearance:server:ChangeRoutingBucket")
     client.startPlayerCustomization(function(appearance)
         if (appearance) then
-            TriggerServerEvent("illenium-appearance:server:saveAppearance", appearance)
+            -- Reset clothing lists
+            local tempProps = {}
+            local tempComponents = {}
+            
+            -- Capture clothing from appearance (only items with drawable != -1)
+            for k, v in pairs(appearance) do
+                if k == 'props' then
+                    for _, prop in pairs(v) do
+                        if prop.drawable ~= -1 then
+                            if prop.prop_id == 0 then
+                                tempProps["hat"] = {prop.drawable, prop.texture}
+                            elseif prop.prop_id == 1 then
+                                tempProps["glasses"] = {prop.drawable, prop.texture}
+                            elseif prop.prop_id == 2 then
+                                tempProps["earrings"] = {prop.drawable, prop.texture}
+                            elseif prop.prop_id == 6 then
+                                tempProps["watch"] = {prop.drawable, prop.texture}
+                            elseif prop.prop_id == 7 then
+                                tempProps["bracelet"] = {prop.drawable, prop.texture}
+                            end
+                        end
+                    end
+                elseif k == 'components' then
+                    for _, comp in pairs(v) do
+                        if comp.drawable ~= -1 then
+                            if comp.component_id == 1 then
+                                tempComponents["mask"] = {comp.drawable, comp.texture}
+                            elseif comp.component_id == 7 then
+                                tempComponents["chain"] = {comp.drawable, comp.texture}
+                            elseif comp.component_id == 8 then
+                                tempComponents["undershirt"] = {comp.drawable, comp.texture}
+                            elseif comp.component_id == 11 then
+                                tempComponents["jacket"] = {comp.drawable, comp.texture}
+                            elseif comp.component_id == 9 then
+                                tempComponents["bodyarmor"] = {comp.drawable, comp.texture}
+                            elseif comp.component_id == 5 then
+                                tempComponents["bag"] = {comp.drawable, comp.texture}
+                            elseif comp.component_id == 4 then
+                                tempComponents["pants"] = {comp.drawable, comp.texture}
+                            elseif comp.component_id == 6 then
+                                tempComponents["shoes"] = {comp.drawable, comp.texture}
+                            elseif comp.component_id == 3 then
+                                tempComponents["gloves"] = {comp.drawable, comp.texture}
+                            end
+                        end
+                    end
+                end
+            end
+            
+            -- Update global lists with filtered items
+            ClotheListPropsStart = tempProps
+            ClotheListComponentsStart = tempComponents
+            
+            -- Give clothing items to player
+            TriggerServerEvent("clothes:GiveFirstClothing", ClotheListPropsStart, ClotheListComponentsStart)
+            
+            -- Clear skin to default and save
+            if exports['hrp-item-clothes'] then
+                exports['hrp-item-clothes']:clearSkin()
+            end
+            
             if onSubmit then
                 onSubmit()
             end
@@ -137,12 +263,137 @@ function OpenShop(config, isPedMenu, shopType)
             return
         end
 
+        -- Capture current clothing BEFORE entering shop
+        local oldProps = {}
+        local oldComponents = {}
+        
+        if shopType == 'clothing' then
+            local currentAppearance = client.getPedAppearance(cache.ped)
+            if currentAppearance then
+                if currentAppearance.props then
+                    for _, prop in pairs(currentAppearance.props) do
+                        if prop.prop_id == 0 then
+                            oldProps["hat"] = {prop.drawable, prop.texture}
+                        elseif prop.prop_id == 1 then
+                            oldProps["glasses"] = {prop.drawable, prop.texture}
+                        elseif prop.prop_id == 2 then
+                            oldProps["earrings"] = {prop.drawable, prop.texture}
+                        elseif prop.prop_id == 6 then
+                            oldProps["watch"] = {prop.drawable, prop.texture}
+                        elseif prop.prop_id == 7 then
+                            oldProps["bracelet"] = {prop.drawable, prop.texture}
+                        end
+                    end
+                end
+                if currentAppearance.components then
+                    for _, comp in pairs(currentAppearance.components) do
+                        if comp.component_id == 1 then
+                            oldComponents["mask"] = {comp.drawable, comp.texture}
+                        elseif comp.component_id == 7 then
+                            oldComponents["chain"] = {comp.drawable, comp.texture}
+                        elseif comp.component_id == 8 then
+                            oldComponents["undershirt"] = {comp.drawable, comp.texture}
+                        elseif comp.component_id == 11 then
+                            oldComponents["jacket"] = {comp.drawable, comp.texture}
+                        elseif comp.component_id == 9 then
+                            oldComponents["bodyarmor"] = {comp.drawable, comp.texture}
+                        elseif comp.component_id == 5 then
+                            oldComponents["bag"] = {comp.drawable, comp.texture}
+                        elseif comp.component_id == 4 then
+                            oldComponents["pants"] = {comp.drawable, comp.texture}
+                        elseif comp.component_id == 6 then
+                            oldComponents["shoes"] = {comp.drawable, comp.texture}
+                        elseif comp.component_id == 3 then
+                            oldComponents["gloves"] = {comp.drawable, comp.texture}
+                        end
+                    end
+                end
+            end
+        end
+
         client.startPlayerCustomization(function(appearance)
             if appearance then
                 if not isPedMenu then
+                    -- For clothing shops, capture and give only CHANGED clothing items
+                    if shopType == 'clothing' then
+                        -- Reset clothing lists for changed items only
+                        local changedProps = {}
+                        local changedComponents = {}
+                        
+                        -- Capture new clothing from appearance
+                        local newProps = {}
+                        local newComponents = {}
+                        
+                        for k, v in pairs(appearance) do
+                            if k == 'props' then
+                                for _, prop in pairs(v) do
+                                    if prop.prop_id == 0 then
+                                        newProps["hat"] = {prop.drawable, prop.texture}
+                                    elseif prop.prop_id == 1 then
+                                        newProps["glasses"] = {prop.drawable, prop.texture}
+                                    elseif prop.prop_id == 2 then
+                                        newProps["earrings"] = {prop.drawable, prop.texture}
+                                    elseif prop.prop_id == 6 then
+                                        newProps["watch"] = {prop.drawable, prop.texture}
+                                    elseif prop.prop_id == 7 then
+                                        newProps["bracelet"] = {prop.drawable, prop.texture}
+                                    end
+                                end
+                            elseif k == 'components' then
+                                for _, comp in pairs(v) do
+                                    if comp.component_id == 1 then
+                                        newComponents["mask"] = {comp.drawable, comp.texture}
+                                    elseif comp.component_id == 7 then
+                                        newComponents["chain"] = {comp.drawable, comp.texture}
+                                    elseif comp.component_id == 8 then
+                                        newComponents["undershirt"] = {comp.drawable, comp.texture}
+                                    elseif comp.component_id == 11 then
+                                        newComponents["jacket"] = {comp.drawable, comp.texture}
+                                    elseif comp.component_id == 9 then
+                                        newComponents["bodyarmor"] = {comp.drawable, comp.texture}
+                                    elseif comp.component_id == 5 then
+                                        newComponents["bag"] = {comp.drawable, comp.texture}
+                                    elseif comp.component_id == 4 then
+                                        newComponents["pants"] = {comp.drawable, comp.texture}
+                                    elseif comp.component_id == 6 then
+                                        newComponents["shoes"] = {comp.drawable, comp.texture}
+                                    elseif comp.component_id == 3 then
+                                        newComponents["gloves"] = {comp.drawable, comp.texture}
+                                    end
+                                end
+                            end
+                        end
+                        
+                        -- Compare and only add changed props (skip if drawable is -1)
+                        for name, newVal in pairs(newProps) do
+                            local oldVal = oldProps[name]
+                            if newVal[1] ~= -1 and (not oldVal or oldVal[1] ~= newVal[1] or oldVal[2] ~= newVal[2]) then
+                                changedProps[name] = newVal
+                            end
+                        end
+                        
+                        -- Compare and only add changed components (skip if drawable is -1)
+                        for name, newVal in pairs(newComponents) do
+                            local oldVal = oldComponents[name]
+                            if newVal[1] ~= -1 and (not oldVal or oldVal[1] ~= newVal[1] or oldVal[2] ~= newVal[2]) then
+                                changedComponents[name] = newVal
+                            end
+                        end
+                        
+                        -- Update the global lists with only changed items
+                        ClotheListPropsStart = changedProps
+                        ClotheListComponentsStart = changedComponents
+                    end
+                    
                     TriggerServerEvent("illenium-appearance:server:chargeCustomer", shopType)
+                    if shopType == 'clothing' then
+                        TriggerEvent("illenium-appearance:client:reloadSkin")
+                    else
+                        TriggerServerEvent("illenium-appearance:server:saveAppearance", appearance)
+                    end
+                else
+                    TriggerServerEvent("illenium-appearance:server:saveAppearance", appearance)
                 end
-                TriggerServerEvent("illenium-appearance:server:saveAppearance", appearance)
             else
                 lib.notify({
                     title = _L("cancelled.title"),

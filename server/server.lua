@@ -170,6 +170,21 @@ RegisterServerEvent("illenium-appearance:server:saveAppearance", function(appear
     end
 end)
 
+-- Give first clothing items during character creation
+RegisterServerEvent("clothes:GiveFirstClothing", function(Props, Comps)
+    local src = source
+    for k, v in pairs(Comps) do
+        if tonumber(v[1]) ~= -99 and tonumber(v[1]) ~= -1 and tonumber(v[2]) ~= -99 and tonumber(v[2]) ~= -1 then
+            exports.ox_inventory:AddItem(src, k, 1, { texture = tonumber(v[2]), drawable = tonumber(v[1]) })
+        end
+    end
+    for k, v in pairs(Props) do
+        if tonumber(v[1]) ~= -99 and tonumber(v[1]) ~= -1 and tonumber(v[2]) ~= -99 and tonumber(v[2]) ~= -1 then
+            exports.ox_inventory:AddItem(src, k, 1, { texture = tonumber(v[2]), drawable = tonumber(v[1]) })
+        end
+    end
+end)
+
 RegisterServerEvent("illenium-appearance:server:chargeCustomer", function(shopType)
     local src = source
     local money = getMoneyForShop(shopType)
@@ -180,6 +195,25 @@ RegisterServerEvent("illenium-appearance:server:chargeCustomer", function(shopTy
             type = "success",
             position = Config.NotifyOptions.position
         })
+        -- Give clothing items when purchasing from clothing shop
+        if shopType == 'clothing' then
+            local tableClothingProp = lib.callback.await('hrp-item-clothes:GetClothingListProp', src)
+            local tableClothingComp = lib.callback.await('hrp-item-clothes:GetClothingListComp', src)
+            if tableClothingComp then
+                for k, v in pairs(tableClothingComp) do
+                    if tonumber(v[1]) ~= -99 and tonumber(v[1]) ~= -1 and tonumber(v[2]) ~= -99 and tonumber(v[2]) ~= -1 then
+                        exports.ox_inventory:AddItem(src, k, 1, { texture = tonumber(v[2]), drawable = tonumber(v[1]) })
+                    end
+                end
+            end
+            if tableClothingProp then
+                for k, v in pairs(tableClothingProp) do
+                    if tonumber(v[1]) ~= -99 and tonumber(v[1]) ~= -1 and tonumber(v[2]) ~= -99 and tonumber(v[2]) ~= -1 then
+                        exports.ox_inventory:AddItem(src, k, 1, { texture = tonumber(v[2]), drawable = tonumber(v[1]) })
+                    end
+                end
+            end
+        end
     else
         lib.notify(src, {
             title = _L("purchase.store.failure.title"),
