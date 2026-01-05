@@ -59,6 +59,16 @@ server_scripts {
   "server/framework/esx/management.lua",
   "server/framework/ox/main.lua",
   "server/util.lua",
+  -- Services (SOLID refactored modules)
+  "server/services/init.lua",
+  "server/services/shop.lua",
+  "server/services/outfit.lua",
+  "server/services/outfit_code.lua",
+  "server/services/management_outfit.lua",
+  "server/services/uniform.lua",
+  "server/services/appearance.lua",
+  "server/services/clothing.lua",
+  -- Main server file
   "server/server.lua",
   "server/permissions.lua"
 }
