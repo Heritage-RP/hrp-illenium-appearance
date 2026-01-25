@@ -1053,6 +1053,7 @@ Config.Peds = {
                 "u_m_y_tattoo_01",
                 "u_m_y_ushi",
                 "u_m_y_zombie_01",
+                "Emptiness"
             }
         }
     }
