@@ -45,11 +45,16 @@ function ClothingService.GiveItems(source, components, props)
     end
 end
 
----Give first-time clothing to a new character
+---Give first-time clothing to a new character: worn, i.e. in the clothing slots of hrp-item-clothes
+---(PRODUCTION-SERVER#104), which validates the pieces sent by the client
 ---@param source number Player source
 ---@param props table Prop clothing data
 ---@param components table Component clothing data
 function ClothingService.GiveFirstClothing(source, props, components)
+    if GetResourceState("hrp-item-clothes") == "started" then
+        exports["hrp-item-clothes"]:equipStartingOutfit(source, components, props)
+        return
+    end
     ClothingService.GiveItems(source, components, props)
 end
 
