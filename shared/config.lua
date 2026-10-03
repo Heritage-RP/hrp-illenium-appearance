@@ -51,7 +51,7 @@ Config.TrackerClothingOptions = {
 }
 
 Config.NewCharacterSections = {
-    Ped = true,
+    Ped = false, -- players create a human (mp_m/mp_f freemode); staff allowed /pedmenu still get the ped list
     HeadBlend = true,
     FaceFeatures = true,
     HeadOverlays = true,

@@ -5,7 +5,9 @@ local player = Ox.GetPlayer()
 
 RegisterNetEvent("ox:setActiveCharacter", function(character)
     if character.isNew then
-        return InitializeCharacter(Framework.GetGender(true))
+        -- ox_core sends this event before it syncs the 'gender' player data, so player.get('gender') is still empty
+        -- here and every new character got the male model. The new character payload carries the gender.
+        return InitializeCharacter(character.gender == "female" and "Female" or "Male")
     end
 
     InitAppearance()
