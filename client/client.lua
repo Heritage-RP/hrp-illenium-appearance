@@ -233,13 +233,10 @@ function InitializeCharacter(gender, onSubmit, onCancel)
             ClotheListPropsStart = tempProps
             ClotheListComponentsStart = tempComponents
             
-            -- Give clothing items to player
+            -- The character keeps what was picked: save it, and the server equips the matching clothing items in
+            -- their clothing slots (PRODUCTION-SERVER#104 — clearSkin() here left every new character naked)
+            TriggerServerEvent("illenium-appearance:server:saveAppearance", appearance)
             TriggerServerEvent("clothes:GiveFirstClothing", ClotheListPropsStart, ClotheListComponentsStart)
-            
-            -- Clear skin to default and save
-            if exports['hrp-item-clothes'] then
-                exports['hrp-item-clothes']:clearSkin()
-            end
             
             if onSubmit then
                 onSubmit()

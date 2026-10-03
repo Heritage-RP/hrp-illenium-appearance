@@ -64,9 +64,26 @@ RegisterServerEvent("illenium-appearance:server:saveAppearance", function(appear
     AppearanceService.Save(citizenID, appearance)
 end)
 
+-- Characters created this session that have not received their starting outfit yet: playerId -> charId.
+-- The outfit comes from the client, so it is accepted once, for the character that was just created
+-- (PRODUCTION-SERVER#104 — before, any client could send it again and again to get clothes and bags).
+local awaitingFirstClothing = {}
+
+AddEventHandler("ox:createdCharacter", function(playerId, _, charId)
+    awaitingFirstClothing[playerId] = charId
+end)
+
+AddEventHandler("playerDropped", function()
+    awaitingFirstClothing[source] = nil
+end)
+
 -- Give first clothing items during character creation
 RegisterServerEvent("clothes:GiveFirstClothing", function(Props, Comps)
     local src = source
+    local charId = awaitingFirstClothing[src]
+    if not charId or charId ~= Framework.GetPlayerID(src) then return end
+    awaitingFirstClothing[src] = nil
+
     ClothingService.GiveFirstClothing(src, Props, Comps)
 end)
 
