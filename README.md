@@ -61,3 +61,13 @@ Read the docs here: https://docs.illenium.dev
 - Original Script: https://github.com/pedr0fontoura/fivem-appearance
 - Tattoo's Support: https://github.com/franfdezmorales/fivem-appearance
 - Last Maintained Fork for QB: https://github.com/mirrox1337/aj-fivem-appearance
+
+## Héritage RP: menu interface (NUI)
+
+This repo only ships the built menu (`web/dist`). Its source is [Heritage-RP/hrp-illenium-appearance-ui](https://github.com/Heritage-RP/hrp-illenium-appearance-ui), a fork of iLLeniumStudios/illenium-appearance-source. It stays out of this repo because PRODUCTION-SERVER's Devtools runs `pnpm install` in every folder with a `package.json`.
+
+To change the menu:
+
+1. In the UI repo: `cd web && npm ci --legacy-peer-deps && npx cross-env VITE_ENV=production npx vite build`.
+2. Copy `web/dist/assets/index.<hash>.js` here into `web/dist/assets/` and delete the old bundle.
+3. Update the `<script>` tag in `web/dist/index.html`. Don't replace that file: it holds the Pip-Boy theme.

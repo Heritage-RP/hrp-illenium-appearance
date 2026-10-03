@@ -86,6 +86,14 @@ Config.DisableComponents = {
     Jackets = false
 }
 
+-- Random outfit button of the appearance menu (Heritage-RP/PRODUCTION-SERVER#14): component and prop ids it draws,
+-- only among the sections open in the menu. Upper body (3) is left alone: it holds the arms matching the jacket.
+Config.RandomOutfit = {
+    Components = { 4, 6, 8, 11 }, -- legs, shoes, shirt, jacket
+    Props = { 0, 1 }, -- hat, glasses
+    PropChance = 0.35 -- chance of wearing each prop
+}
+
 Config.DisableProps = {
     Hats = false,
     Glasses = false,

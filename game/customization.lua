@@ -381,6 +381,84 @@ client.getAppearanceSettings = getAppearanceSettings
 local config
 function client.getConfig() return config end
 
+-- Random outfit (Heritage-RP/PRODUCTION-SERVER#14)
+local COMPONENT_CONFIG_KEYS = {
+    [1] = "masks", [3] = "upperBody", [4] = "lowerBody", [5] = "bags", [6] = "shoes",
+    [7] = "scarfAndChains", [8] = "shirts", [9] = "bodyArmor", [10] = "decals", [11] = "jackets"
+}
+local PROP_CONFIG_KEYS = { [0] = "hats", [1] = "glasses", [2] = "ear", [6] = "watches", [7] = "bracelets" }
+local RANDOM_PICK_TRIES = 20
+
+-- Random value in [min, max] that isn't blacklisted; `fallback` when every try hits the blacklist
+local function randomAllowed(min, max, blacklist, fallback)
+    if max < min then return fallback end
+
+    local blocked = {}
+    for i = 1, #blacklist do blocked[blacklist[i]] = true end
+
+    for _ = 1, RANDOM_PICK_TRIES do
+        local value = math.random(min, max)
+        if not blocked[value] then return value end
+    end
+
+    return fallback
+end
+
+local function randomizeComponent(ped, componentId)
+    local settings = getComponentSettings(ped, componentId)
+    local current = GetPedDrawableVariation(ped, componentId)
+    local drawable = randomAllowed(settings.drawable.min, settings.drawable.max, settings.blacklist.drawables, current)
+    client.setPedComponent(ped, { component_id = componentId, drawable = drawable, texture = 0 })
+
+    -- Texture range and blacklist depend on the drawable just set
+    settings = getComponentSettings(ped, componentId)
+    local texture = randomAllowed(settings.texture.min, settings.texture.max, settings.blacklist.textures, 0)
+    client.setPedComponent(ped, { component_id = componentId, drawable = drawable, texture = texture })
+end
+
+local function randomizeProp(ped, propId)
+    if math.random() >= Config.RandomOutfit.PropChance then
+        client.setPedProp(ped, { prop_id = propId, drawable = -1, texture = -1 })
+        return
+    end
+
+    local settings = getPropSettings(ped, propId)
+    local drawable = randomAllowed(0, settings.drawable.max, settings.blacklist.drawables, -1)
+    if drawable == -1 then
+        client.setPedProp(ped, { prop_id = propId, drawable = -1, texture = -1 })
+        return
+    end
+    client.setPedProp(ped, { prop_id = propId, drawable = drawable, texture = 0 })
+
+    settings = getPropSettings(ped, propId)
+    local texture = randomAllowed(0, settings.texture.max, settings.blacklist.textures, 0)
+    client.setPedProp(ped, { prop_id = propId, drawable = drawable, texture = texture })
+end
+
+--- Puts a random outfit on the ped: only the clothing sections open in the current menu, blacklist respected
+function client.randomizeOutfit(ped)
+    if not config then return end
+
+    if config.components then
+        for _, componentId in ipairs(Config.RandomOutfit.Components) do
+            local key = COMPONENT_CONFIG_KEYS[componentId]
+            local trackerLocked = componentId == 7 and config.hasTracker
+            if key and config.componentConfig[key] and not trackerLocked then
+                randomizeComponent(ped, componentId)
+            end
+        end
+    end
+
+    if config.props then
+        for _, propId in ipairs(Config.RandomOutfit.Props) do
+            local key = PROP_CONFIG_KEYS[propId]
+            if key and config.propConfig[key] then
+                randomizeProp(ped, propId)
+            end
+        end
+    end
+end
+
 local isCameraInterpolating
 local currentCamera
 local cameraHandle
