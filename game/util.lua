@@ -184,6 +184,20 @@ local function getPedAppearance(ped)
     }
 end
 
+-- Same max health for every player character (PRODUCTION-SERVER#105): the female freemode model has 175, the male one
+-- 200, and every model change resets it. Done here, where the player's model changes, instead of polling: a full ped
+-- stays full (175/175 -> 200/200), a wounded one keeps its health.
+local PLAYER_MAX_HEALTH = 200
+
+local function setPlayerMaxHealth(ped)
+    local max = GetEntityMaxHealth(ped)
+    if max == PLAYER_MAX_HEALTH then return end
+
+    local health = GetEntityHealth(ped)
+    SetEntityMaxHealth(ped, PLAYER_MAX_HEALTH)
+    if health >= max then SetEntityHealth(ped, PLAYER_MAX_HEALTH) end
+end
+
 local function setPlayerModel(model)
     if type(model) == "string" then model = joaat(model) end
 
@@ -196,6 +210,7 @@ local function setPlayerModel(model)
         SetModelAsNoLongerNeeded(model)
 
         if isPedFreemodeModel(cache.ped) then
+            setPlayerMaxHealth(cache.ped)
             SetPedDefaultComponentVariation(cache.ped)
              -- Check if the model is male or female, then change the face mix based on this.
              if model == `mp_m_freemode_01` then
