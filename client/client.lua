@@ -85,7 +85,8 @@ local function getNewCharacterConfig()
     local config = GetDefaultConfig()
     config.enableExit   = false
 
-    config.ped          = Config.NewCharacterSections.Ped
+    -- Staff who can use /pedmenu keep the ped list (animals, NPC models) at creation
+    config.ped          = Config.NewCharacterSections.Ped or lib.callback.await("illenium-appearance:server:canUsePedMenu", false)
     config.headBlend    = Config.NewCharacterSections.HeadBlend
     config.faceFeatures = Config.NewCharacterSections.FaceFeatures
     config.headOverlays = Config.NewCharacterSections.HeadOverlays
