@@ -29,7 +29,7 @@ function OutfitCodeService.GenerateCode(outfitId)
     local code = generateUniqueCode()
     local id = Database.PlayerOutfitCodes.Add(outfitId, code)
     if not id then
-        print("Something went wrong while generating outfit code")
+        lib.print.error("Something went wrong while generating outfit code")
         return nil
     end
     return code
