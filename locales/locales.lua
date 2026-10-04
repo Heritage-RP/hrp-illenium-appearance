@@ -9,7 +9,7 @@ function _L(key)
     for k in key:gmatch("[^.]+") do
         value = value[k]
         if not value then
-            print("Missing locale for: " .. key)
+            lib.print.warn("Missing locale for: " .. key)
             return ""
         end
     end
