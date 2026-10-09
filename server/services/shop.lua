@@ -39,14 +39,32 @@ function ShopService.ChargeCustomer(source, shopType)
     return Framework.RemoveMoney(source, "cash", cost)
 end
 
+---Tattoo of shared/tattoos.lua with this zone and name: its price is read there, never from the client
+---@param tattoo table Tattoo data sent by the client
+---@return table|nil
+local function findTattoo(tattoo)
+    if type(tattoo) ~= "table" then return end
+    local zone = Config.Tattoos[tattoo.zone]
+    if not zone then return end
+    for i = 1, #zone do
+        if zone[i].name == tattoo.name then return zone[i] end
+    end
+end
+
 ---Process a tattoo purchase
 ---@param source number Player source
----@param tattoo table Tattoo data with cost and label
+---@param tattoo table Tattoo data sent by the client (zone and name)
 ---@return boolean success
 function ShopService.PayForTattoo(source, tattoo)
+    tattoo = findTattoo(tattoo)
+    if not tattoo then
+        HrpLog.business.warn("tattoo purchase refused: unknown tattoo", { source = source })
+        return false
+    end
     local cost = tattoo.cost or Config.TattooCost
-    
+
     if Framework.RemoveMoney(source, "cash", cost) then
+        HrpLog.business.info("tattoo bought", { source = source, tattoo = tattoo.name, zone = tattoo.zone, cost = cost })
         lib.notify(source, {
             title = _L("purchase.tattoo.success.title"),
             description = string.format(_L("purchase.tattoo.success.description"), tattoo.label, cost),
@@ -55,6 +73,7 @@ function ShopService.PayForTattoo(source, tattoo)
         })
         return true
     else
+        HrpLog.business.debug("tattoo purchase refused: not enough money", { source = source, tattoo = tattoo.name, cost = cost })
         lib.notify(source, {
             title = _L("purchase.tattoo.failure.title"),
             description = _L("purchase.tattoo.failure.description"),

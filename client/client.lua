@@ -250,6 +250,7 @@ function InitializeCharacter(gender, onSubmit, onCancel)
 end
 
 function OpenShop(config, isPedMenu, shopType)
+    config.chargeTattoos = not isPedMenu -- Config.ChargePerTattoo: each tattoo is paid when applied (game/nui.lua)
     lib.callback("illenium-appearance:server:hasMoney", false, function(hasMoney, money)
         if not hasMoney and not isPedMenu then
             lib.notify({

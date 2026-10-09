@@ -351,11 +351,16 @@ local function getPedTattoos()
     return PED_TATTOOS
 end
 
+-- Both keep PED_TATTOOS in step with the ped (PRODUCTION-SERVER#12): it is what setPedHair re-applies after clearing
+-- the decorations and what getPedAppearance saves, so a stale list dropped the tattoo just bought at the next hair
+-- change or save. A new table each time: the menu's entry snapshot keeps the old one for the cancel.
 local function addPedTattoo(ped, tattoos)
+    PED_TATTOOS = tattoos
     setTattoos(ped, tattoos)
 end
 
 local function removePedTattoo(ped, tattoos)
+    PED_TATTOOS = tattoos
     setTattoos(ped, tattoos)
 end
 

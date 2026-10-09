@@ -1,0 +1,37 @@
+{
+  "bounties": [
+    {
+      "id": "appearance-tattoos",
+      "version": 1,
+      "title": "Se faire tatouer",
+      "summary": "Acheter des tatouages dans un salon : chaque tatouage reste visible, est payé une seule fois et est gardé, même en quittant sans enregistrer et après une reconnexion (illenium-appearance — #12).",
+      "steps": [
+        "Le kit vous donne 300 $ et place le salon de tatouage de Vespucci sur le GPS : entrez dans la zone et appuyez sur E (100 $ au moins pour entrer).",
+        "Choisissez un tatouage dans une zone (aperçu), puis cliquez « Apply » : 100 $ sont débités et le tatouage reste sur le personnage.",
+        "Choisissez un deuxième tatouage (même zone ou une autre) et appliquez-le : le premier doit rester visible.",
+        "Quittez le menu par la croix (« Exit customization », sans enregistrer) : les deux tatouages payés doivent rester, et aucun frais en plus n'est débité.",
+        "Reconnectez-vous ou revenez à l'écran de sélection puis reprenez le personnage : les tatouages sont toujours là.",
+        "Bonus : dans le salon, retirez un tatouage (« Remove ») puis enregistrez : il disparaît, sans frais."
+      ],
+      "resources": ["illenium-appearance"],
+      "reward": 15,
+      "timeLimitMinutes": 30,
+      "kit": {
+        "items": [{ "name": "money", "count": 300 }],
+        "location": { "label": "Salon de tatouage de Vespucci", "coords": [-1154.01, -1425.31, 4.95], "teleport": true }
+      },
+      "objectives": [
+        {
+          "id": "bought",
+          "label": "Deux tatouages achetés",
+          "log": { "resource": "illenium-appearance", "msg": "tattoo bought", "count": 2 }
+        },
+        {
+          "id": "saved",
+          "label": "Apparence enregistrée",
+          "log": { "resource": "illenium-appearance", "msg": "appearance saved" }
+        }
+      ]
+    }
+  ]
+}
