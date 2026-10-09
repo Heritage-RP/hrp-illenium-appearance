@@ -81,9 +81,13 @@ RegisterNUICallback("appearance_change_eye_color", function(eyeColor, cb)
 end)
 
 RegisterNUICallback("appearance_apply_tattoo", function(data, cb)
-    local paid = not data.tattoo or not Config.ChargePerTattoo or lib.callback.await("illenium-appearance:server:payForTattoo", false, data.tattoo)
+    -- Paid only in a shop: character creation and the staff ped menu are free, like their clothes (PRODUCTION-SERVER#12)
+    local config = client.getConfig()
+    local charge = data.tattoo and Config.ChargePerTattoo and config and config.chargeTattoos
+    local paid = not charge or lib.callback.await("illenium-appearance:server:payForTattoo", false, data.tattoo)
     if paid then
         client.addPedTattoo(cache.ped, data.updatedTattoos or data)
+        if charge then client.keepBoughtTattoo(data.tattoo) end
     end
     cb(paid)
 end)

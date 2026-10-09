@@ -62,6 +62,14 @@ RegisterServerEvent("illenium-appearance:server:saveAppearance", function(appear
     local src = source
     local citizenID = Framework.GetPlayerID(src)
     AppearanceService.Save(citizenID, appearance)
+
+    local tattoos = 0
+    if type(appearance) == "table" and type(appearance.tattoos) == "table" then
+        for _, zone in pairs(appearance.tattoos) do
+            if type(zone) == "table" then tattoos += #zone end
+        end
+    end
+    HrpLog.business.debug("appearance saved", { source = src, tattoos = tattoos })
 end)
 
 -- Characters created this session that have not received their starting outfit yet: playerId -> charId.
@@ -89,7 +97,10 @@ end)
 
 RegisterServerEvent("illenium-appearance:server:chargeCustomer", function(shopType)
     local src = source
-    
+    -- Config.ChargePerTattoo: TattooCost is the price of each tattoo, already paid when applied — no second fee on
+    -- leaving the shop (PRODUCTION-SERVER#12)
+    if shopType == "tattoo" and Config.ChargePerTattoo then return end
+
     if ShopService.ChargeCustomer(src, shopType) then
         local cost = ShopService.GetCost(shopType)
         ShopService.NotifySuccess(src, cost, shopType)

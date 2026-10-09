@@ -28,6 +28,29 @@ local function getAppearance()
 end
 client.getAppearance = getAppearance
 
+-- A tattoo paid in a shop belongs to the player even if the menu is left without saving (PRODUCTION-SERVER#12): it
+-- goes into the entry snapshot that the cancel restores, and that snapshot is saved when the menu closes.
+local tattooBought = false
+
+local function keepBoughtTattoo(tattoo)
+    local appearance = getAppearance()
+    local tattoos = {}
+    for zone, list in pairs(appearance.tattoos or {}) do
+        tattoos[zone] = table.clone(list)
+    end
+
+    local zone = tattoos[tattoo.zone] or {}
+    for i = 1, #zone do
+        if zone[i].name == tattoo.name then return end
+    end
+    zone[#zone + 1] = tattoo
+    tattoos[tattoo.zone] = zone
+
+    appearance.tattoos = tattoos
+    tattooBought = true
+end
+client.keepBoughtTattoo = keepBoughtTattoo
+
 local function addToBlacklist(item, drawable, drawableId, blacklistSettings)
     if drawable == drawableId and item.textures then
         for i = 1, #item.textures do
@@ -616,6 +639,7 @@ function client.startPlayerCustomization(cb, conf)
     repeat Wait(0) until IsScreenFadedIn() and not IsPlayerTeleportActive() and not IsPlayerSwitchInProgress()
 
     playerAppearance = client.getPedAppearance(cache.ped)
+    tattooBought = false
     playerCoords = GetEntityCoords(cache.ped, true)
     playerHeading = GetEntityHeading(cache.ped)
 
@@ -660,6 +684,9 @@ function client.exitPlayerCustomization(appearance)
 
     if not appearance then
         client.setPlayerAppearance(getAppearance())
+        if tattooBought then
+            TriggerServerEvent("illenium-appearance:server:saveAppearance", getAppearance())
+        end
     else
         client.setPedTattoos(cache.ped, appearance.tattoos)
     end
@@ -673,6 +700,7 @@ function client.exitPlayerCustomization(appearance)
     callback = nil
     config = nil
     playerAppearance = nil
+    tattooBought = false
     playerCoords = nil
     cameraHandle = nil
     currentCamera = nil

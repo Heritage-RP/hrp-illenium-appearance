@@ -42,6 +42,7 @@ client_scripts {
 }
 
 server_scripts {
+  "@hrp-metrics/lib/log.lua", -- HrpLog: structured logs (Heritage-RP/PRODUCTION-SERVER docs/dev/logs.md)
   "@oxmysql/lib/MySQL.lua",
   "server/database/database.lua",
   "server/database/jobgrades.lua",
@@ -104,3 +105,5 @@ files {
 }
 
 ui_page "web/dist/index.html"
+
+hrp_bounty_file "bounties.json" -- beta-test bounties read by hrp-bounty (Heritage-RP/PRODUCTION-SERVER docs/dev/bounties.md)
