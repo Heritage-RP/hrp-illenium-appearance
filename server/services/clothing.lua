@@ -7,14 +7,40 @@
 
 local ClothingService = {}
 
----Check if a clothing value is valid (not default/empty)
+---Check if a clothing value is valid (not default/empty): {drawable, texture}, both whole numbers ≥ 0
 ---@param value table {drawable, texture} tuple
 ---@return boolean isValid
 local function isValidClothing(value)
-    return tonumber(value[1]) ~= -99 
-        and tonumber(value[1]) ~= -1 
-        and tonumber(value[2]) ~= -99 
-        and tonumber(value[2]) ~= -1
+    if type(value) ~= "table" then return false end
+    local drawable, texture = tonumber(value[1]), tonumber(value[2])
+    return drawable ~= nil and texture ~= nil
+        and drawable >= 0 and texture >= 0
+        and math.floor(drawable) == drawable and math.floor(texture) == texture
+end
+
+---Only clothing items may be given: the names come from the client (shop purchase), and anything else would be
+---handed out for the price of a shop visit (PRODUCTION-SERVER#286). A clothing item is one hrp-item-clothes handles.
+---@param name any
+---@return boolean
+local function isClothingItem(name)
+    if type(name) ~= "string" then return false end
+    local item = exports.ox_inventory:Items(name)
+    return item ~= nil and item.server ~= nil and item.server.export == "hrp-item-clothes.useClothingItem"
+end
+
+---Add one piece of clothing for each valid {name = {drawable, texture}} entry
+---@param source number Player source
+---@param list table|nil
+local function giveList(source, list)
+    if type(list) ~= "table" then return end
+    for name, value in pairs(list) do
+        if isClothingItem(name) and isValidClothing(value) then
+            exports.ox_inventory:AddItem(source, name, 1, {
+                texture = tonumber(value[2]),
+                drawable = tonumber(value[1])
+            })
+        end
+    end
 end
 
 ---Give clothing items to a player from components and props tables
@@ -22,27 +48,8 @@ end
 ---@param components table Table of component clothing {name = {drawable, texture}}
 ---@param props table Table of prop clothing {name = {drawable, texture}}
 function ClothingService.GiveItems(source, components, props)
-    if components then
-        for name, value in pairs(components) do
-            if isValidClothing(value) then
-                exports.ox_inventory:AddItem(source, name, 1, { 
-                    texture = tonumber(value[2]), 
-                    drawable = tonumber(value[1]) 
-                })
-            end
-        end
-    end
-    
-    if props then
-        for name, value in pairs(props) do
-            if isValidClothing(value) then
-                exports.ox_inventory:AddItem(source, name, 1, { 
-                    texture = tonumber(value[2]), 
-                    drawable = tonumber(value[1]) 
-                })
-            end
-        end
-    end
+    giveList(source, components)
+    giveList(source, props)
 end
 
 ---Give first-time clothing to a new character: worn, i.e. in the clothing slots of hrp-item-clothes
