@@ -12,6 +12,16 @@ function Database.PlayerSkins.Add(citizenID, model, appearance, active)
     MySQL.insert.await("INSERT INTO playerskins (citizenid, model, skin, active) VALUES (?, ?, ?, ?)", {citizenID, model, appearance, active})
 end
 
+---The appearance of this model becomes the only one active, in one transaction
+---@return boolean saved
+function Database.PlayerSkins.Replace(citizenID, model, appearance)
+    return MySQL.transaction.await({
+        { query = "UPDATE playerskins SET active = 0 WHERE citizenid = ?", values = { citizenID } },
+        { query = "DELETE FROM playerskins WHERE citizenid = ? AND model = ?", values = { citizenID, model } },
+        { query = "INSERT INTO playerskins (citizenid, model, skin, active) VALUES (?, ?, ?, 1)", values = { citizenID, model, appearance } },
+    }) == true
+end
+
 function Database.PlayerSkins.GetByCitizenID(citizenID, model)
     local query = "SELECT skin FROM playerskins WHERE citizenid = ?"
     local queryArgs = {citizenID}
@@ -22,7 +32,8 @@ function Database.PlayerSkins.GetByCitizenID(citizenID, model)
         query = query .. " AND active = ?"
         queryArgs[#queryArgs + 1] = 1
     end
-    return MySQL.scalar.await(query, queryArgs)
+    -- The latest row if older duplicates are left (PRODUCTION-SERVER#327)
+    return MySQL.scalar.await(query .. " ORDER BY id DESC LIMIT 1", queryArgs)
 end
 
 function Database.PlayerSkins.DeleteByCitizenID(citizenID)

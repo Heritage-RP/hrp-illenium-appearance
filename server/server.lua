@@ -19,8 +19,8 @@ local ClothingService = Services.Get("ClothingService")
 -- CALLBACKS
 -- ============================================================================
 
-lib.callback.register("illenium-appearance:server:generateOutfitCode", function(_, outfitID)
-    return OutfitCodeService.GenerateCode(outfitID)
+lib.callback.register("illenium-appearance:server:generateOutfitCode", function(source, outfitID)
+    return OutfitCodeService.GenerateCode(Framework.GetPlayerID(source), outfitID)
 end)
 
 lib.callback.register("illenium-appearance:server:importOutfitCode", function(source, outfitName, outfitCode)
@@ -38,7 +38,10 @@ lib.callback.register("illenium-appearance:server:hasMoney", function(source, sh
 end)
 
 lib.callback.register("illenium-appearance:server:payForTattoo", function(source, tattoo)
-    return ShopService.PayForTattoo(source, tattoo)
+    local paid = ShopService.PayForTattoo(source, tattoo)
+    -- The next saveAppearance may keep it (PRODUCTION-SERVER#327)
+    if paid then AppearanceService.RecordPaidTattoo(source, Framework.GetPlayerID(source), tattoo) end
+    return paid
 end)
 
 lib.callback.register("illenium-appearance:server:getOutfits", function(source)
@@ -47,6 +50,7 @@ lib.callback.register("illenium-appearance:server:getOutfits", function(source)
 end)
 
 lib.callback.register("illenium-appearance:server:getManagementOutfits", function(source, mType, gender)
+    if not Config.BossManagedOutfits then return {} end
     return ManagementOutfitService.GetForPlayer(source, mType, gender)
 end)
 
@@ -59,17 +63,25 @@ end)
 -- ============================================================================
 
 RegisterServerEvent("illenium-appearance:server:saveAppearance", function(appearance)
-    local src = source
-    local citizenID = Framework.GetPlayerID(src)
-    AppearanceService.Save(citizenID, appearance)
+    -- Checked before saving (PRODUCTION-SERVER#327): model, tattoos owned or paid, size
+    AppearanceService.SaveFromPlayer(source, appearance)
+end)
 
-    local tattoos = 0
-    if type(appearance) == "table" and type(appearance.tattoos) == "table" then
-        for _, zone in pairs(appearance.tattoos) do
-            if type(zone) == "table" then tattoos += #zone end
-        end
-    end
-    HrpLog.business.debug("appearance saved", { source = src, tattoos = tattoos })
+-- Character creation: any model of the list and any tattoo, free, until the editor is closed (clothes:GiveFirstClothing)
+local CREATION_EDIT_MS = 60 * 60 * 1000
+-- /pedmenu used by the staff on a player: one save, within this delay
+local PEDMENU_EDIT_MS = 30 * 60 * 1000
+
+AddEventHandler("ox:createdCharacter", function(playerId, _, charId)
+    AppearanceService.AllowFreeEdit(playerId, charId, CREATION_EDIT_MS)
+end)
+
+AddEventHandler("ox:playerLogout", function(playerId)
+    AppearanceService.ForgetPlayer(playerId)
+end)
+
+AddEventHandler("playerDropped", function()
+    AppearanceService.ForgetPlayer(source)
 end)
 
 -- Characters created this session that have not received their starting outfit yet: playerId -> charId.
@@ -88,6 +100,8 @@ end)
 -- Give first clothing items during character creation
 RegisterServerEvent("clothes:GiveFirstClothing", function(Props, Comps)
     local src = source
+    -- Sent right after the creation editor's saveAppearance: the free edit is over
+    AppearanceService.EndFreeEdit(src)
     local charId = awaitingFirstClothing[src]
     if not charId or charId ~= Framework.GetPlayerID(src) then return end
     awaitingFirstClothing[src] = nil
@@ -148,23 +162,29 @@ RegisterNetEvent("illenium-appearance:server:updateOutfit", function(id, model, 
     end
 end)
 
-RegisterNetEvent("illenium-appearance:server:saveManagementOutfit", function(outfitData)
-    local src = source
-    local id = ManagementOutfitService.Save(outfitData)
-    
-    if id then
-        lib.notify(src, {
-            title = _L("outfits.save.success.title"),
-            description = string.format(_L("outfits.save.success.description"), outfitData.Name),
-            type = "success",
-            position = Config.NotifyOptions.position
-        })
-    end
-end)
+-- Job / gang outfits managed by their boss: off on Héritage RP, and ox_core has no job for Framework.GetJob. Without these
+-- routes no client can fill or empty management_outfits (PRODUCTION-SERVER#327); when on, the staff permission is needed.
+if Config.BossManagedOutfits then
+    RegisterNetEvent("illenium-appearance:server:saveManagementOutfit", function(outfitData)
+        local src = source
+        if type(outfitData) ~= "table" or not IsPlayerAceAllowed(src, "command.pedmenu") then return end
+        local id = ManagementOutfitService.Save(outfitData)
 
-RegisterNetEvent("illenium-appearance:server:deleteManagementOutfit", function(id)
-    ManagementOutfitService.Delete(id)
-end)
+        if id then
+            lib.notify(src, {
+                title = _L("outfits.save.success.title"),
+                description = string.format(_L("outfits.save.success.description"), outfitData.Name),
+                type = "success",
+                position = Config.NotifyOptions.position
+            })
+        end
+    end)
+
+    RegisterNetEvent("illenium-appearance:server:deleteManagementOutfit", function(id)
+        if not IsPlayerAceAllowed(source, "command.pedmenu") then return end
+        ManagementOutfitService.Delete(id)
+    end)
+end
 
 RegisterNetEvent("illenium-appearance:server:syncUniform", function(uniform)
     local src = source
@@ -247,6 +267,8 @@ if Config.EnablePedMenu then
                 return
             end
         end
+        -- The ped menu offers every model and free tattoos: its next save may keep them (PRODUCTION-SERVER#327)
+        AppearanceService.AllowFreeEdit(target, Framework.GetPlayerID(target), PEDMENU_EDIT_MS, true)
         TriggerClientEvent("illenium-appearance:client:openClothingShopMenu", target, true)
     end)
 end

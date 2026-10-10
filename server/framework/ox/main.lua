@@ -3,7 +3,8 @@ if not Framework.Ox() then return end
 local Ox = require '@ox_core.lib.init'
 
 function Framework.GetPlayerID(playerId)
-    return Ox.GetPlayer(playerId).charId
+    local player = Ox.GetPlayer(playerId)
+    return player and player.charId
 end
 
 function Framework.HasMoney(playerId, item, amount)
@@ -22,10 +23,10 @@ function Framework.GetGang()
     return ---@todo
 end
 
+---One transaction (PRODUCTION-SERVER#327): a failed INSERT no longer leaves the character without appearance
+---@return boolean saved
 function Framework.SaveAppearance(appearance, charId)
-    Database.PlayerSkins.UpdateActiveField(charId, 0)
-    Database.PlayerSkins.DeleteByModel(charId, appearance.model)
-    Database.PlayerSkins.Add(charId, appearance.model, json.encode(appearance), 1)
+    return Database.PlayerSkins.Replace(charId, appearance.model, json.encode(appearance))
 end
 
 function Framework.GetAppearance(charId, model)
