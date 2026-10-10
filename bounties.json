@@ -2,7 +2,7 @@
   "bounties": [
     {
       "id": "appearance-tattoos",
-      "version": 1,
+      "version": 2,
       "title": "Se faire tatouer",
       "summary": "Acheter des tatouages dans un salon : chaque tatouage reste visible, est payé une seule fois et est gardé, même en quittant sans enregistrer et après une reconnexion (illenium-appearance — #12).",
       "steps": [
@@ -11,7 +11,7 @@
         "Choisissez un deuxième tatouage (même zone ou une autre) et appliquez-le : le premier doit rester visible.",
         "Quittez le menu par la croix (« Exit customization », sans enregistrer) : les deux tatouages payés doivent rester, et aucun frais en plus n'est débité.",
         "Reconnectez-vous ou revenez à l'écran de sélection puis reprenez le personnage : les tatouages sont toujours là.",
-        "Bonus : dans le salon, retirez un tatouage (« Remove ») puis enregistrez : il disparaît, sans frais."
+        "Bonus : dans le salon, retirez un tatouage (« Remove ») puis remettez-le (« Apply ») : il n'est pas payé une deuxième fois. Retirez-en un autre puis enregistrez : il disparaît, sans frais."
       ],
       "resources": ["illenium-appearance"],
       "reward": 15,
