@@ -56,6 +56,25 @@ local function LoadPlayerUniform(reset)
     end)
 end
 
+-- Puts back the appearance saved on the server. The clothing shop calls it directly (PRODUCTION-SERVER#327): through
+-- /reloadskin's checks (cooldown, vehicle, fall, death, handcuffs) the bought outfit could stay on the ped as well as in
+-- the clothing items received.
+local function ApplySavedAppearance(resetUniform)
+    reloadSkinTimer = GetGameTimer()
+    BackupPlayerStats()
+
+    lib.callback("illenium-appearance:server:getAppearance", false, function(appearance)
+        if not appearance then
+            return
+        end
+        client.setPlayerAppearance(appearance)
+        if Config.PersistUniforms then
+            LoadPlayerUniform(resetUniform)
+        end
+        RestorePlayerStats()
+    end)
+end
+
 function InitAppearance()
     Framework.UpdatePlayerData()
     lib.callback("illenium-appearance:server:getAppearance", false, function(appearance)
@@ -386,7 +405,8 @@ function OpenShop(config, isPedMenu, shopType)
                     
                     TriggerServerEvent("illenium-appearance:server:chargeCustomer", shopType)
                     if shopType == 'clothing' then
-                        TriggerEvent("illenium-appearance:client:reloadSkin")
+                        -- The bought pieces come as clothing items: the ped goes back to the saved outfit
+                        ApplySavedAppearance()
                     else
                         TriggerServerEvent("illenium-appearance:server:saveAppearance", appearance)
                     end
@@ -968,19 +988,7 @@ RegisterNetEvent("illenium-appearance:client:reloadSkin", function(bypassChecks)
         return
     end
 
-    reloadSkinTimer = GetGameTimer()
-    BackupPlayerStats()
-
-    lib.callback("illenium-appearance:server:getAppearance", false, function(appearance)
-        if not appearance then
-            return
-        end
-        client.setPlayerAppearance(appearance)
-        if Config.PersistUniforms then
-            LoadPlayerUniform(bypassChecks)
-        end
-        RestorePlayerStats()
-    end)
+    ApplySavedAppearance(bypassChecks)
 end)
 
 RegisterNetEvent("illenium-appearance:client:ClearStuckProps", function()

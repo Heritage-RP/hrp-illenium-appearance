@@ -83,7 +83,7 @@ function OutfitService.Update(citizenId, outfitId, model, components, props)
         loadOutfitsToCache(citizenId)
     end
     
-    if not Database.PlayerOutfits.Update(outfitId, model, json.encode(components), json.encode(props)) then
+    if not Database.PlayerOutfits.Update(citizenId, outfitId, model, json.encode(components), json.encode(props)) then
         return nil
     end
     
@@ -106,10 +106,12 @@ end
 ---@param citizenId string|number Player's citizen ID
 ---@param outfitId number Outfit ID
 function OutfitService.Delete(citizenId, outfitId)
+    -- Only an outfit of this character: the id comes from the client (PRODUCTION-SERVER#327)
+    if not citizenId or not Database.PlayerOutfits.GetOwned(outfitId, citizenId) then return end
     Database.PlayerOutfitCodes.DeleteByOutfitID(outfitId)
-    Database.PlayerOutfits.DeleteByID(outfitId)
+    Database.PlayerOutfits.DeleteByID(citizenId, outfitId)
     
-    for k, v in ipairs(outfitCache[citizenId]) do
+    for k, v in ipairs(outfitCache[citizenId] or {}) do
         if v.id == outfitId then
             table.remove(outfitCache[citizenId], k)
             break
