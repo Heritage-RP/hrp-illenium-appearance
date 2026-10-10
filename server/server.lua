@@ -183,14 +183,36 @@ RegisterNetEvent("illenium-appearance:server:resetOutfitCache", function()
     OutfitService.ResetCache(citizenID)
 end)
 
+-- A private routing bucket only while editing the appearance of a character just created (PRODUCTION-SERVER#307):
+-- any client could send these at any time — vanish from everyone, or leave a bucket the staff imposed.
+-- playerId -> true: created a character, may enter its editor bucket once.
+local mayIsolate = {}
+-- playerId -> bucket it was in before the editor, to go back to it.
+local isolated = {}
+
+AddEventHandler("ox:createdCharacter", function(playerId)
+    mayIsolate[playerId] = true
+end)
+
+AddEventHandler("playerDropped", function()
+    mayIsolate[source] = nil
+    isolated[source] = nil
+end)
+
 RegisterNetEvent("illenium-appearance:server:ChangeRoutingBucket", function()
     local src = source
+    if not mayIsolate[src] or isolated[src] then return end
+    mayIsolate[src] = nil
+    isolated[src] = GetPlayerRoutingBucket(src)
     SetPlayerRoutingBucket(src, src)
 end)
 
 RegisterNetEvent("illenium-appearance:server:ResetRoutingBucket", function()
     local src = source
-    SetPlayerRoutingBucket(src, 0)
+    local previous = isolated[src]
+    if previous == nil then return end
+    isolated[src] = nil
+    SetPlayerRoutingBucket(src, previous)
 end)
 
 -- ============================================================================
