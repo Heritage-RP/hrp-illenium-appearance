@@ -38,9 +38,15 @@ lib.callback.register("illenium-appearance:server:hasMoney", function(source, sh
 end)
 
 lib.callback.register("illenium-appearance:server:payForTattoo", function(source, tattoo)
+    local charId = Framework.GetPlayerID(source)
+    -- Saved on the character or already paid this session: put back for free (PRODUCTION-SERVER#12)
+    if AppearanceService.OwnsTattoo(source, charId, tattoo) then
+        HrpLog.business.debug("tattoo put back: already owned", { source = source, tattoo = tattoo.name, zone = tattoo.zone })
+        return true
+    end
     local paid = ShopService.PayForTattoo(source, tattoo)
     -- The next saveAppearance may keep it (PRODUCTION-SERVER#327)
-    if paid then AppearanceService.RecordPaidTattoo(source, Framework.GetPlayerID(source), tattoo) end
+    if paid then AppearanceService.RecordPaidTattoo(source, charId, tattoo) end
     return paid
 end)
 

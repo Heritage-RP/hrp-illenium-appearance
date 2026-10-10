@@ -80,11 +80,22 @@ RegisterNUICallback("appearance_change_eye_color", function(eyeColor, cb)
     client.setPedEyeColor(cache.ped, eyeColor)
 end)
 
+-- One purchase at a time: a double click on "Apply" sent the same purchase twice (PRODUCTION-SERVER#12)
+local buyingTattoo = false
+
 RegisterNUICallback("appearance_apply_tattoo", function(data, cb)
     -- Paid only in a shop: character creation and the staff ped menu are free, like their clothes (PRODUCTION-SERVER#12)
     local config = client.getConfig()
     local charge = data.tattoo and Config.ChargePerTattoo and config and config.chargeTattoos
-    local paid = not charge or lib.callback.await("illenium-appearance:server:payForTattoo", false, data.tattoo)
+    if charge and buyingTattoo then return cb(false) end
+
+    local paid = true
+    if charge then
+        buyingTattoo = true
+        local ok, result = pcall(lib.callback.await, "illenium-appearance:server:payForTattoo", false, data.tattoo)
+        buyingTattoo = false
+        paid = ok and result == true
+    end
     if paid then
         client.addPedTattoo(cache.ped, data.updatedTattoos or data)
         if charge then client.keepBoughtTattoo(data.tattoo) end

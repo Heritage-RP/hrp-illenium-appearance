@@ -92,6 +92,22 @@ local function ownedTattoos(stored)
     return owned
 end
 
+---Already the player's: saved on the character, or paid this session (PRODUCTION-SERVER#12). Taken off then put back in
+---the menu, or a second click on "Apply": not paid twice.
+---@param playerId number
+---@param charId number|string
+---@param tattoo any zone and name sent by the client
+---@return boolean
+function AppearanceService.OwnsTattoo(playerId, charId, tattoo)
+    if not charId or type(tattoo) ~= "table" or type(tattoo.zone) ~= "string" or type(tattoo.name) ~= "string" then
+        return false
+    end
+    local key = tattooKey(tattoo.zone, tattoo.name)
+    local paid = paidTattoos[playerId]
+    if paid and paid.charId == charId and paid[key] then return true end
+    return ownedTattoos(Framework.GetAppearance(charId))[key] == true
+end
+
 ---@return table|nil the tattoo of shared/tattoos.lua with this zone and name
 local function findConfigTattoo(zone, name)
     local list = type(zone) == "string" and Config.Tattoos[zone]

@@ -68,6 +68,20 @@ This repo only ships the built menu (`web/dist`). Its source is [Heritage-RP/hrp
 
 To change the menu:
 
-1. In the UI repo: `cd web && npm ci --legacy-peer-deps && npx cross-env VITE_ENV=production npx vite build`.
+1. In the UI repo: `cd web && npm ci --legacy-peer-deps && npm test && npm run build` (tests: vitest; build: tsc, then vite).
 2. Copy `web/dist/assets/index.<hash>.js` here into `web/dist/assets/` and delete the old bundle.
 3. Update the `<script>` tag in `web/dist/index.html`. Don't replace that file: it holds the Pip-Boy theme.
+
+## Tests (Héritage RP)
+
+The tattoo shop is covered by Lua 5.4 tests (PRODUCTION-SERVER#12): `tests/lua/harness.lua` loads the real `game/`,
+`client/` and `server/` files with fake natives, NUI, ox_lib and database, and `tests/lua/tattoo_shop_spec.lua` plays
+the menu's buttons (Apply, Remove, hair change, Save, Exit customization, reconnection).
+
+```sh
+tests/run.sh                 # docker, image nickblah/lua:5.4
+LUA=lua5.4 tests/run.sh      # or a local Lua 5.4
+```
+
+The menu's own tattoo list logic (Apply, Delete, Delete all, hair fade) is tested in the UI repo with vitest
+(`web/src/components/Appearance/tattooList.test.ts`, `npm test`).
