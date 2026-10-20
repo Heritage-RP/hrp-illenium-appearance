@@ -168,7 +168,7 @@ RegisterNetEvent("illenium-appearance:server:updateOutfit", function(id, model, 
     end
 end)
 
--- Job / gang outfits managed by their boss: off on Héritage RP, and ox_core has no job for Framework.GetJob. Without these
+-- Job / gang outfits managed by their boss: off by default, and ox_core has no job for Framework.GetJob. Without these
 -- routes no client can fill or empty management_outfits (PRODUCTION-SERVER#327); when on, the staff permission is needed.
 if Config.BossManagedOutfits then
     RegisterNetEvent("illenium-appearance:server:saveManagementOutfit", function(outfitData)

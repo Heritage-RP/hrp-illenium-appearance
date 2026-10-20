@@ -62,26 +62,14 @@ Read the docs here: https://docs.illenium.dev
 - Tattoo's Support: https://github.com/franfdezmorales/fivem-appearance
 - Last Maintained Fork for QB: https://github.com/mirrox1337/aj-fivem-appearance
 
-## Héritage RP: menu interface (NUI)
+## Fork (Heritage-RP)
 
-This repo only ships the built menu (`web/dist`). Its source is [Heritage-RP/hrp-illenium-appearance-ui](https://github.com/Heritage-RP/hrp-illenium-appearance-ui), a fork of iLLeniumStudios/illenium-appearance-source. It stays out of this repo because PRODUCTION-SERVER's Devtools runs `pnpm install` in every folder with a `package.json`.
+This fork keeps only generic patches, listed in [PATCHES.md](PATCHES.md). The menu theme follows the replicated convar
+`hrp_ui_theme` (`heritage` = the green terminal theme, anything else = upstream's), and any started resource can add ped
+models to the ped menu with `hrp_appearance_ped '<model>'` lines in its `fxmanifest.lua`.
 
-To change the menu:
-
-1. In the UI repo: `cd web && npm ci --legacy-peer-deps && npm test && npm run build` (tests: vitest; build: tsc, then vite).
-2. Copy `web/dist/assets/index.<hash>.js` here into `web/dist/assets/` and delete the old bundle.
-3. Update the `<script>` tag in `web/dist/index.html`. Don't replace that file: it holds the Pip-Boy theme.
-
-## Tests (Héritage RP)
-
-The tattoo shop is covered by Lua 5.4 tests (PRODUCTION-SERVER#12): `tests/lua/harness.lua` loads the real `game/`,
-`client/` and `server/` files with fake natives, NUI, ox_lib and database, and `tests/lua/tattoo_shop_spec.lua` plays
-the menu's buttons (Apply, Remove, hair change, Save, Exit customization, reconnection).
-
-```sh
-tests/run.sh                 # docker, image nickblah/lua:5.4
-LUA=lua5.4 tests/run.sh      # or a local Lua 5.4
-```
-
-The menu's own tattoo list logic (Apply, Delete, Delete all, hair fade) is tested in the UI repo with vitest
-(`web/src/components/Appearance/tattooList.test.ts`, `npm test`).
+The menu's source is [Heritage-RP/hrp-illenium-appearance-ui](https://github.com/Heritage-RP/hrp-illenium-appearance-ui)
+(fork of iLLeniumStudios/illenium-appearance-source): build it there (`cd web && npm ci --legacy-peer-deps && npm test &&
+npm run build`), copy `web/dist/assets/index.<hash>.js` into `web/dist/assets/` here, delete the old bundle and update
+the `<script>` tag of `web/dist/index.html` (keep that file: it holds the heritage theme rules). Lua tests:
+`tests/run.sh` (Lua 5.4 in docker, `LUA=lua5.4 tests/run.sh` for a local one).

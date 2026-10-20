@@ -273,7 +273,8 @@ client.getHairSettings = getHairSettings
 local function getAppearanceSettings()
     local ped = {
         model = {
-            items = filterPedModelsForPlayer(Config.Peds.pedConfig)
+            -- With the models declared by the started resources (game/declared_peds.lua)
+            items = filterPedModelsForPlayer(DeclaredPeds.withDeclared(Config.Peds.pedConfig))
         }
     }
 

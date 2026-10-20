@@ -28,7 +28,18 @@ local function getPedModel(ped)
         computePedModelsByHash()
         hashesComputed = true
     end
-    return pedModelsByHash[GetEntityModel(ped)]
+    local hash = GetEntityModel(ped)
+    local model = pedModelsByHash[hash]
+    if model then return model end
+
+    -- A model declared by a resource (game/declared_peds.lua), maybe started after the first lookup
+    local declared = DeclaredPeds.current()
+    for i = 1, #declared do
+        if joaat(declared[i].model) == hash then
+            pedModelsByHash[hash] = declared[i].model
+            return declared[i].model
+        end
+    end
 end
 
 ---@param ped number entity id
@@ -186,16 +197,17 @@ end
 
 -- Same max health for every player character (PRODUCTION-SERVER#105): the female freemode model has 175, the male one
 -- 200, and every model change resets it. Done here, where the player's model changes, instead of polling: a full ped
--- stays full (175/175 -> 200/200), a wounded one keeps its health.
-local PLAYER_MAX_HEALTH = 200
-
+-- stays full (175/175 -> 200/200), a wounded one keeps its health. Config.PlayerMaxHealth = false keeps the model's own.
 local function setPlayerMaxHealth(ped)
+    local target = Config.PlayerMaxHealth
+    if not target then return end
+
     local max = GetEntityMaxHealth(ped)
-    if max == PLAYER_MAX_HEALTH then return end
+    if max == target then return end
 
     local health = GetEntityHealth(ped)
-    SetEntityMaxHealth(ped, PLAYER_MAX_HEALTH)
-    if health >= max then SetEntityHealth(ped, PLAYER_MAX_HEALTH) end
+    SetEntityMaxHealth(ped, target)
+    if health >= max then SetEntityHealth(ped, target) end
 end
 
 local function setPlayerModel(model)
