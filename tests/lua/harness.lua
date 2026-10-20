@@ -2,7 +2,10 @@
 -- server (PRODUCTION-SERVER#12). Run every spec with tests/run.sh (docker, nickblah/lua:5.4).
 --
 -- Each side gets its own environment (_ENV), like FiveM gives each script runtime its own globals:
---   client: shared/{config,blacklist,peds,tattoos}.lua, game/*.lua, client/defaults.lua, client/common.lua, client/client.lua
+--   client: shared/{config,blacklist,peds,tattoos,theme}.lua, game/*.lua, client/defaults.lua, client/common.lua,
+--           client/client.lua
+-- H.newWorld options: money, charId, staff, convars (client convars by name: hrp_ui_theme…), resources (the started
+-- resources the client sees: { name, state = "started", peds = { "<hrp_appearance_ped value>", … } }).
 --   server: shared/config.lua, shared/tattoos.lua, server/services/{init,shop,appearance}.lua,
 --           server/server.lua, server/permissions.lua
 -- Natives nobody fakes below are no-ops returning 0 (truthy in Lua, like a model "in cdimage" or "loaded"); they are
@@ -134,7 +137,7 @@ end
 ---@return table world
 function H.newWorld(opts)
     opts = opts or {}
-    local world = { charId = opts.charId or 42, playerId = 1 }
+    local world = { charId = opts.charId or 42, playerId = 1, convars = opts.convars or {}, resources = opts.resources or {} }
 
     -- Server ----------------------------------------------------------------------------------------------------------
     local server = { db = {}, money = opts.money or 300, logs = {}, callbacks = {}, events = {} }
@@ -200,15 +203,42 @@ end
 function H.newClient(world)
     local server = world.server
     local ped = { model = joaat(world.model or "mp_m_freemode_01"), decorations = {} }
-    local c = { ped = ped, nui = {}, sent = {} }
+    local c = { ped = ped, nui = {}, sent = {}, logs = {} }
+    local function resource(name)
+        for _, r in ipairs(world.resources) do
+            if r.name == name then return r end
+        end
+    end
 
     local C = newEnv({
         joaat = joaat,
         json = { encode = function() return "" end },
         cache = { ped = 101, playerId = 1, vehicle = false },
         LocalPlayer = { state = {} },
-        GetConvar = function(_, fallback) return fallback end,
+        GetConvar = function(name, fallback)
+            local value = world.convars[name]
+            if value == nil then return fallback end
+            return value
+        end,
         GetEntityModel = function() return ped.model end,
+        -- Resources and their fxmanifest metadata (game/declared_peds.lua); world.resources may change between calls
+        GetNumResources = function() return #world.resources end,
+        GetResourceByFindIndex = function(i)
+            local r = world.resources[i + 1]
+            return r and r.name
+        end,
+        GetResourceState = function(name)
+            local r = resource(name)
+            return r and (r.state or "started") or "missing"
+        end,
+        GetNumResourceMetadata = function(name, key)
+            local r = resource(name)
+            return (r and key == "hrp_appearance_ped" and r.peds) and #r.peds or 0
+        end,
+        GetResourceMetadata = function(name, key, index)
+            local r = resource(name)
+            return r and key == "hrp_appearance_ped" and r.peds and r.peds[index + 1] or nil
+        end,
         IsScreenFadedIn = function() return true end,
         IsPlayerTeleportActive = function() return false end,
         IsPlayerSwitchInProgress = function() return false end,
@@ -253,6 +283,7 @@ function H.newClient(world)
         return server.call(name, ...)
     end)
     C.lib.notify = function() end
+    C.lib.print = newLog(c.logs)
     C.Framework = setmetatable({}, { __index = function() return stub end })
     C.Framework.GetPlayerGender = function() return "Male" end
     c.env = C
@@ -261,7 +292,9 @@ function H.newClient(world)
     H.load(C, "shared/blacklist.lua")
     H.load(C, "shared/peds.lua")
     H.load(C, "shared/tattoos.lua")
+    H.load(C, "shared/theme.lua")
     H.load(C, "game/constants.lua")
+    H.load(C, "game/declared_peds.lua")
     local f = io.open("game/tattoo_list.lua", "r")
     if f then
         f:close()

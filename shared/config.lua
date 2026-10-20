@@ -86,6 +86,10 @@ Config.DisableComponents = {
     Jackets = false
 }
 
+-- Max health of every freemode player character, set at each model change (the female model has 175, the male one 200);
+-- false keeps each model's own
+Config.PlayerMaxHealth = 200
+
 -- Random outfit button of the appearance menu (Heritage-RP/PRODUCTION-SERVER#14): component and prop ids it draws,
 -- only among the sections open in the menu. Upper body (3) is left alone: it holds the arms matching the jacket.
 Config.RandomOutfit = {

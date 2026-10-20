@@ -155,6 +155,15 @@ RegisterNUICallback("rotate_right", function(_, cb)
     client.pedTurn(cache.ped, -10.0)
 end)
 
+-- The server's UI theme (replicated convar hrp_ui_theme, `setr hrp_ui_theme heritage`): "heritage" picks the heritage
+-- theme of shared/theme.lua, any other value keeps Config.Theme.currentTheme. Read when the page asks, on the client,
+-- where the replicated value is known. web/dist/index.html asks too, for its heritage-theme rules.
+local HERITAGE_THEME = "heritage"
+
 RegisterNUICallback("get_theme_configuration", function(_, cb)
-    cb(Config.Theme)
+    local uiTheme = GetConvar("hrp_ui_theme", "neutral")
+    cb({
+        currentTheme = uiTheme == HERITAGE_THEME and HERITAGE_THEME or Config.Theme.currentTheme,
+        themes = Config.Theme.themes,
+    })
 end)

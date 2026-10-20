@@ -1,9 +1,11 @@
 Config.Theme = {
-    currentTheme = "pip-boy",
+    -- The menu uses "heritage" when the server's UI theme is heritage (replicated convar hrp_ui_theme, read in
+    -- game/nui.lua), this theme otherwise
+    currentTheme = "qb-core",
     themes = {
         {
-            -- HRP Pip-Boy Terminal Theme (matches hrp-character-selector)
-            id = "pip-boy",
+            -- Green terminal look, with the heritage-theme rules of web/dist/index.html
+            id = "heritage",
             borderRadius = "0px",
             fontColor = "26, 255, 128",
             fontColorHover = "26, 255, 128",
