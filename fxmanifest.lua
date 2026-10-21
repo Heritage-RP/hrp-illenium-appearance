@@ -11,6 +11,7 @@ lua54 "yes"
 client_scripts {
   "game/constants.lua",
   "game/declared_peds.lua",
+  "game/declared_theme.lua",
   "game/util.lua",
   "game/customization.lua",
   "game/nui.lua",

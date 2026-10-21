@@ -7,76 +7,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>UI</title>
   <style>
-    /* heritage theme (shared/theme.lua), on when the server's UI theme is heritage: see the script below */
+    /* Themed look, on when the server's UI theme is a theme a resource declares (game/declared_theme.lua): drawn with
+       the --hrp-* tokens of that theme's stylesheet, loaded by the script below. Neutral leaves the upstream look. */
 
-    /* Terminal glow for containers */
-    body.heritage-theme [class*="container"],
-    body.heritage-theme [class*="section"],
-    body.heritage-theme [class*="modal"],
-    body.heritage-theme [class*="wrapper"] {
-      box-shadow: 0 0 20px rgba(26, 255, 128, 0.2), inset 0 0 10px rgba(26, 255, 128, 0.03);
-      border-color: rgba(26, 255, 128, 0.3) !important;
+    /* Glow for containers */
+    body.hrp-themed [class*="container"],
+    body.hrp-themed [class*="section"],
+    body.hrp-themed [class*="modal"],
+    body.hrp-themed [class*="wrapper"] {
+      box-shadow: var(--hrp-shadow);
+      border-color: var(--hrp-border) !important;
     }
 
     /* Text glow effect */
-    body.heritage-theme h1,
-    body.heritage-theme h2,
-    body.heritage-theme h3,
-    body.heritage-theme [class*="title"],
-    body.heritage-theme [class*="header"] {
-      text-shadow: 0 0 5px rgba(26, 255, 128, 0.4), 0 0 10px rgba(26, 255, 128, 0.2);
+    body.hrp-themed h1,
+    body.hrp-themed h2,
+    body.hrp-themed h3,
+    body.hrp-themed [class*="title"],
+    body.hrp-themed [class*="header"] {
+      text-shadow: var(--hrp-glow);
     }
 
-    /* Terminal scrollbar */
-    body.heritage-theme ::-webkit-scrollbar {
+    /* Scrollbar */
+    body.hrp-themed ::-webkit-scrollbar {
       width: 8px;
       height: 8px;
     }
 
-    body.heritage-theme ::-webkit-scrollbar-track {
-      background: rgba(5, 15, 8, 0.95);
-      border: 1px solid rgba(13, 122, 62, 0.5);
+    body.hrp-themed ::-webkit-scrollbar-track {
+      background: var(--hrp-bg-sunken);
+      border: 1px solid var(--hrp-border);
     }
 
-    body.heritage-theme ::-webkit-scrollbar-thumb {
-      background: rgba(13, 122, 62, 0.8);
-      border: 1px solid rgba(26, 255, 128, 0.5);
+    body.hrp-themed ::-webkit-scrollbar-thumb {
+      background: var(--hrp-border-strong);
+      border: 1px solid var(--hrp-accent);
     }
 
-    body.heritage-theme ::-webkit-scrollbar-thumb:hover {
-      background: rgba(26, 255, 128, 0.8);
+    body.hrp-themed ::-webkit-scrollbar-thumb:hover {
+      background: var(--hrp-accent);
     }
 
     /* Button hover glow */
-    body.heritage-theme button:hover,
-    body.heritage-theme [class*="btn"]:hover {
-      box-shadow: 0 0 15px rgba(26, 255, 128, 0.4);
+    body.hrp-themed button:hover,
+    body.hrp-themed [class*="btn"]:hover {
+      box-shadow: 0 0 15px var(--hrp-accent-glow);
     }
   </style>
   <script type="module" crossorigin src="./assets/index.8ec35e48.js"></script>
   <script>
-    // The theme configuration the menu itself fetches (game/nui.lua, get_theme_configuration): when its current theme is
-    // heritage (server convar hrp_ui_theme), load its font and turn on the heritage-theme rules above. Any other theme
-    // leaves the page as upstream ships it.
+    // The theme configuration the menu itself fetches (game/nui.lua, get_theme_configuration): when the server's UI
+    // theme is a declared one (uiTheme.stylesheet), load its stylesheet (tokens and fonts), set data-theme and turn on
+    // the themed rules above. Neutral leaves the page as upstream ships it.
     (function () {
-      var HERITAGE = 'heritage';
       var TRIES = 10;
       var RETRY_MS = 500;
 
-      function applyHeritage() {
-        var fonts = [
-          ['preconnect', 'https://fonts.googleapis.com'],
-          ['preconnect', 'https://fonts.gstatic.com'],
-          ['stylesheet', 'https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap']
-        ];
-        fonts.forEach(function (font) {
-          var link = document.createElement('link');
-          link.rel = font[0];
-          link.href = font[1];
-          if (font[1].indexOf('gstatic') !== -1) link.crossOrigin = '';
-          document.head.appendChild(link);
-        });
-        document.body.classList.add('heritage-theme');
+      function applyTheme(uiTheme) {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = uiTheme.stylesheet;
+        link.setAttribute('data-hrp-theme', uiTheme.theme);
+        document.head.appendChild(link);
+        document.documentElement.setAttribute('data-theme', uiTheme.theme);
+        document.body.classList.add('hrp-themed');
       }
 
       function whenReady(fn) {
@@ -92,8 +86,11 @@
           body: '{}'
         })
           .then(function (response) { return response.json(); })
-          .then(function (theme) {
-            if (theme && theme.currentTheme === HERITAGE) whenReady(applyHeritage);
+          .then(function (configuration) {
+            var uiTheme = configuration && configuration.uiTheme;
+            if (uiTheme && typeof uiTheme.stylesheet === 'string' && uiTheme.stylesheet !== '') {
+              whenReady(function () { applyTheme(uiTheme); });
+            }
           })
           .catch(function () {
             // The client script may not have registered the callback yet
