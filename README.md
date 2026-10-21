@@ -65,11 +65,13 @@ Read the docs here: https://docs.illenium.dev
 ## Fork (Heritage-RP)
 
 This fork keeps only generic patches, listed in [PATCHES.md](PATCHES.md). The menu theme follows the replicated convar
-`hrp_ui_theme` (`heritage` = the green terminal theme, anything else = upstream's), and any started resource can add ped
-models to the ped menu with `hrp_appearance_ped '<model>'` lines in its `fxmanifest.lua`.
+`hrp_ui_theme`: a theme a started resource declares (`hrp_ui_theme '<path>/<name>.css'`, the stylesheet every NUI of the
+server loads, and `hrp_ui_theme` + `hrp_appearance_theme '<path>.json'` for this menu: an object with the fields of a
+`Config.Theme.themes` entry, `id` = the theme name) themes the menu, anything else keeps upstream's. Any started resource
+can add ped models to the ped menu with `hrp_appearance_ped '<model>'` lines in its `fxmanifest.lua`.
 
 The menu's source is [Heritage-RP/hrp-illenium-appearance-ui](https://github.com/Heritage-RP/hrp-illenium-appearance-ui)
 (fork of iLLeniumStudios/illenium-appearance-source): build it there (`cd web && npm ci --legacy-peer-deps && npm test &&
 npm run build`), copy `web/dist/assets/index.<hash>.js` into `web/dist/assets/` here, delete the old bundle and update
-the `<script>` tag of `web/dist/index.html` (keep that file: it holds the heritage theme rules). Lua tests:
+the `<script>` tag of `web/dist/index.html` (keep that file: it holds the themed rules). Lua tests:
 `tests/run.sh` (Lua 5.4 in docker, `LUA=lua5.4 tests/run.sh` for a local one).

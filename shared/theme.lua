@@ -1,23 +1,8 @@
 Config.Theme = {
-    -- The menu uses "heritage" when the server's UI theme is heritage (replicated convar hrp_ui_theme, read in
-    -- game/nui.lua), this theme otherwise
+    -- The menu uses the theme a started resource declares for the server's UI theme (replicated convar hrp_ui_theme,
+    -- `hrp_appearance_theme '<file>.json'`, game/declared_theme.lua), this theme otherwise
     currentTheme = "qb-core",
     themes = {
-        {
-            -- Green terminal look, with the heritage-theme rules of web/dist/index.html
-            id = "heritage",
-            borderRadius = "0px",
-            fontColor = "26, 255, 128",
-            fontColorHover = "26, 255, 128",
-            fontColorSelected = "5, 15, 8",
-            fontFamily = "Share Tech Mono",
-            primaryBackground = "5, 15, 8",
-            primaryBackgroundSelected = "26, 255, 128",
-            secondaryBackground = "10, 30, 15",
-            scaleOnHover = false,
-            sectionFontWeight = "normal",
-            smoothBackgroundTransition = false
-        },
         {
             id = "default",
             borderRadius = "4px",

@@ -17,7 +17,7 @@ server sets its own values through convars or other resources (Heritage-RP/PRODU
 | Appearance checked and saved in one transaction, outfit and boss-managed outfit routes protected | generic | candidate | `server/services/appearance.lua`, `server/services/outfit.lua`, `server/services/outfit_code.lua`, `server/database/*.lua`, `server/framework/ox/main.lua`, `server/server.lua`, `client/client.lua` |
 | Private routing bucket only in the editor of a character just created | generic | candidate | `server/server.lua` |
 | Tattoo shop: each tattoo paid once, bought tattoos kept on the character | generic | candidate | `game/customization.lua`, `game/nui.lua`, `game/util.lua`, `client/client.lua`, `server/server.lua`, `server/services/shop.lua`, `server/services/appearance.lua`, `web/dist/assets/*.js` |
-| Theme `heritage` (green terminal), picked by the replicated convar `hrp_ui_theme` | generic | no | `shared/theme.lua`, `game/nui.lua`, `web/dist/index.html` |
+| Menu theme from the replicated convar `hrp_ui_theme`: the theme a started resource declares (`hrp_ui_theme '<path>/<name>.css'` loaded by the page, its `--hrp-*` tokens for the themed rules; `hrp_appearance_theme '<path>.json'` for the menu values), PRODUCTION-SERVER#520 | generic | no | `game/declared_theme.lua`, `shared/theme.lua`, `game/nui.lua`, `web/dist/index.html`, `fxmanifest.lua` |
 | Ped models declared by other resources (`hrp_appearance_ped '<model>'` in their fxmanifest) | generic | no | `game/declared_peds.lua`, `game/customization.lua`, `game/util.lua`, `fxmanifest.lua` |
 | Beta-test bounties read by hrp-bounty | generic | no | `bounties.json`, `fxmanifest.lua` |
 | Tests (Lua 5.4 in docker, `tests/run.sh`) | generic | no | `tests/**` |

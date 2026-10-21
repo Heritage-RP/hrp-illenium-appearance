@@ -5,7 +5,8 @@
 --   client: shared/{config,blacklist,peds,tattoos,theme}.lua, game/*.lua, client/defaults.lua, client/common.lua,
 --           client/client.lua
 -- H.newWorld options: money, charId, staff, convars (client convars by name: hrp_ui_theme…), resources (the started
--- resources the client sees: { name, state = "started", peds = { "<hrp_appearance_ped value>", … } }).
+-- resources the client sees: { name, state = "started", peds = { "<hrp_appearance_ped value>", … },
+-- metadata = { [key] = { "<value>", … } }, files = { [path] = <decoded JSON table> } }).
 --   server: shared/config.lua, shared/tattoos.lua, server/services/{init,shop,appearance}.lua,
 --           server/server.lua, server/permissions.lua
 -- Natives nobody fakes below are no-ops returning 0 (truthy in Lua, like a model "in cdimage" or "loaded"); they are
@@ -212,7 +213,16 @@ function H.newClient(world)
 
     local C = newEnv({
         joaat = joaat,
-        json = { encode = function() return "" end },
+        json = {
+            encode = function() return "" end,
+            -- LoadResourceFile hands out "file:<resource>/<path>": decode gives back that file's table
+            decode = function(text)
+                local name, path = tostring(text):match("^file:([^/]+)/(.+)$")
+                local r = name and resource(name)
+                if not (r and r.files and r.files[path] ~= nil) then error("not JSON: " .. tostring(text)) end
+                return H.deepcopy(r.files[path])
+            end,
+        },
         cache = { ped = 101, playerId = 1, vehicle = false },
         LocalPlayer = { state = {} },
         GetConvar = function(name, fallback)
@@ -233,11 +243,17 @@ function H.newClient(world)
         end,
         GetNumResourceMetadata = function(name, key)
             local r = resource(name)
-            return (r and key == "hrp_appearance_ped" and r.peds) and #r.peds or 0
+            local values = r and (key == "hrp_appearance_ped" and r.peds or (r.metadata or {})[key])
+            return values and #values or 0
         end,
         GetResourceMetadata = function(name, key, index)
             local r = resource(name)
-            return r and key == "hrp_appearance_ped" and r.peds and r.peds[index + 1] or nil
+            local values = r and (key == "hrp_appearance_ped" and r.peds or (r.metadata or {})[key])
+            return values and values[index + 1] or nil
+        end,
+        LoadResourceFile = function(name, path)
+            local r = resource(name)
+            return (r and r.files and r.files[path] ~= nil) and ("file:%s/%s"):format(name, path) or nil
         end,
         IsScreenFadedIn = function() return true end,
         IsPlayerTeleportActive = function() return false end,
@@ -295,6 +311,7 @@ function H.newClient(world)
     H.load(C, "shared/theme.lua")
     H.load(C, "game/constants.lua")
     H.load(C, "game/declared_peds.lua")
+    H.load(C, "game/declared_theme.lua")
     local f = io.open("game/tattoo_list.lua", "r")
     if f then
         f:close()
