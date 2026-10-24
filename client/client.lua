@@ -112,6 +112,8 @@ local function getNewCharacterConfig()
     config.components   = Config.NewCharacterSections.Components
     config.props        = Config.NewCharacterSections.Props
     config.tattoos      = not Config.RCoreTattoosCompatibility and Config.NewCharacterSections.Tattoos
+    -- Only the simple pieces a server allows, when it declares them (shared/creation_clothes.lua)
+    config.creationClothes = CreationClothes.current()
 
     return config
 end

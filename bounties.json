@@ -59,6 +59,37 @@
           "log": { "resource": "illenium-appearance", "msg": "appearance saved" }
         }
       ]
+    },
+    {
+      "id": "appearance-creation-clothes",
+      "version": 1,
+      "title": "Vêtements simples à la création",
+      "summary": "Créer un personnage avec les seules pièces simples que le serveur propose à la création, puis recevoir ces vêtements dans l'inventaire (illenium-appearance — #561).",
+      "steps": [
+        "Créez un nouveau personnage jusqu'à l'éditeur d'apparence.",
+        "Ouvrez l'onglet des vêtements : seules quelques pièces simples sont proposées, certaines sections n'apparaissent pas.",
+        "Faites défiler une pièce (veste, pantalon…) : seules les pièces autorisées défilent ; choisissez une tenue et enregistrez.",
+        "Vérifiez dans l'inventaire que les vêtements choisis sont équipés.",
+        "Bonus : signalez avec /bug une pièce proposée qui ne paraît pas simple, ou une section qui manque (capture d'écran si possible)."
+      ],
+      "resources": [
+        "illenium-appearance",
+        "hrp-character-selector"
+      ],
+      "reward": 5,
+      "timeLimitMinutes": 20,
+      "objectives": [
+        {
+          "id": "limited",
+          "label": "Éditeur de création limité aux pièces simples",
+          "log": { "resource": "illenium-appearance", "msg": "creation clothes limited", "side": "client" }
+        },
+        {
+          "id": "saved",
+          "label": "Apparence enregistrée",
+          "log": { "resource": "illenium-appearance", "msg": "appearance saved" }
+        }
+      ]
     }
   ]
 }

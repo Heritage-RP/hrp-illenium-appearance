@@ -16,7 +16,8 @@ local MAX_APPEARANCE_BYTES = 60000
 -- Hair fades are tattoos of this zone, picked for free at the barber (paid on leaving the shop)
 local FREE_TATTOO_ZONE = "ZONE_HAIR"
 
----playerId -> { charId, expires, oneSave }: may save any model and any tattoo (character creation, /pedmenu by staff)
+---playerId -> { charId, expires, oneSave, creation }: may save any model and any tattoo (character creation, /pedmenu
+---by staff)
 local freeEdits = {}
 ---playerId -> { charId, [zone .. "/" .. name] = true }: tattoos paid this session
 local paidTattoos = {}
@@ -31,9 +32,10 @@ end
 ---@param charId number|string
 ---@param durationMs number how long the free edit lasts at most
 ---@param oneSave boolean|nil ends at the next save of this player
-function AppearanceService.AllowFreeEdit(playerId, charId, durationMs, oneSave)
+---@param creation boolean|nil a character just created: its clothes within the creation lists (shared/creation_clothes.lua)
+function AppearanceService.AllowFreeEdit(playerId, charId, durationMs, oneSave, creation)
     if not charId then return end
-    freeEdits[playerId] = { charId = charId, expires = GetGameTimer() + durationMs, oneSave = oneSave }
+    freeEdits[playerId] = { charId = charId, expires = GetGameTimer() + durationMs, oneSave = oneSave, creation = creation }
 end
 
 ---@param playerId number
@@ -62,16 +64,16 @@ function AppearanceService.ForgetPlayer(playerId)
     paidTattoos[playerId] = nil
 end
 
----@return boolean
-local function hasFreeEdit(playerId, charId)
+---@return table|nil the free edit of this character, still running
+local function freeEditOf(playerId, charId)
     local edit = freeEdits[playerId]
-    if not edit then return false end
+    if not edit then return nil end
     if edit.charId ~= charId or GetGameTimer() > edit.expires then
         freeEdits[playerId] = nil
-        return false
+        return nil
     end
     if edit.oneSave then freeEdits[playerId] = nil end
-    return true
+    return edit
 end
 
 ---@param stored table|nil appearance in the database
@@ -159,9 +161,10 @@ end
 ---@param charId number|string
 ---@param appearance any
 ---@param unrestricted boolean staff or free edit: any model, any tattoo of shared/tattoos.lua
+---@param creationClothes table|nil character creation: the clothes it may wear (CreationClothes.settings)
 ---@return table|nil appearance
 ---@return string|nil reason
-function AppearanceService.Validate(playerId, charId, appearance, unrestricted)
+function AppearanceService.Validate(playerId, charId, appearance, unrestricted, creationClothes)
     if type(appearance) ~= "table" or type(appearance.model) ~= "string" then
         return nil, "malformed"
     end
@@ -169,6 +172,16 @@ function AppearanceService.Validate(playerId, charId, appearance, unrestricted)
     local ok, encoded = pcall(json.encode, appearance)
     if not ok or #encoded > MAX_APPEARANCE_BYTES then
         return nil, "too large"
+    end
+
+    -- A piece outside the lists sent at creation: the allowed one, or the starting one, put back (PRODUCTION-SERVER#561)
+    if creationClothes then
+        local replaced
+        appearance, replaced = CreationClothes.sanitize(appearance, creationClothes, Config.InitialPlayerClothes)
+        if replaced > 0 then
+            HrpLog.business.warn("appearance save: pieces outside the creation clothes put back",
+                { source = playerId, replaced = replaced })
+        end
     end
 
     if unrestricted then
@@ -245,9 +258,12 @@ function AppearanceService.SaveFromPlayer(playerId, appearance)
     if not charId then return end
 
     -- Decided on reception: a free edit may end (next event) before a queued save runs
-    local unrestricted = IsPlayerAceAllowed(playerId, STAFF_ACE) or hasFreeEdit(playerId, charId)
+    local edit = freeEditOf(playerId, charId)
+    local unrestricted = IsPlayerAceAllowed(playerId, STAFF_ACE) or edit ~= nil
+    -- Character creation: only the simple pieces a server allows, when it declares them (shared/creation_clothes.lua)
+    local creationClothes = edit and edit.creation and CreationClothes.current() or nil
     runInOrder(charId, function()
-        local checked, reason = AppearanceService.Validate(playerId, charId, appearance, unrestricted)
+        local checked, reason = AppearanceService.Validate(playerId, charId, appearance, unrestricted, creationClothes)
         if not checked then
             HrpLog.business.warn("appearance save refused", { source = playerId, reason = reason })
             return

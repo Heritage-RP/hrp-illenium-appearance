@@ -2,13 +2,15 @@
 -- server (PRODUCTION-SERVER#12). Run every spec with tests/run.sh (docker, nickblah/lua:5.4).
 --
 -- Each side gets its own environment (_ENV), like FiveM gives each script runtime its own globals:
---   client: shared/{config,blacklist,peds,tattoos,theme}.lua, game/*.lua, client/defaults.lua, client/common.lua,
+--   client: shared/{config,blacklist,peds,tattoos,theme,creation_clothes}.lua, game/*.lua, client/defaults.lua, client/common.lua,
 --           client/client.lua
 -- H.newWorld options: money, charId, staff, convars (client convars by name: hrp_ui_theme…), resources (the started
 -- resources the client sees: { name, state = "started", peds = { "<hrp_appearance_ped value>", … },
 -- metadata = { [key] = { "<value>", … } }, files = { [path] = <decoded JSON table> } }).
---   server: shared/config.lua, shared/tattoos.lua, server/services/{init,shop,appearance}.lua,
---           server/server.lua, server/permissions.lua
+--   server: shared/config.lua, shared/tattoos.lua, shared/creation_clothes.lua, server/services/{init,shop,appearance}.lua,
+--           server/server.lua, server/permissions.lua; ClothingService is a fake that keeps what it was asked to give
+--           (server.firstClothing), server.trigger runs the local events (ox:createdCharacter…), world.serverModel is
+--           the model the server sees on the player's ped
 -- Natives nobody fakes below are no-ops returning 0 (truthy in Lua, like a model "in cdimage" or "loaded"); they are
 -- callable tables, so `Services = Services or {}` still works.
 -- CfxLua extensions are translated on load: `name` hash literals -> joaat("name"), `x += y` -> `x = x + (y)` (one
@@ -141,7 +143,7 @@ function H.newWorld(opts)
     local world = { charId = opts.charId or 42, playerId = 1, convars = opts.convars or {}, resources = opts.resources or {} }
 
     -- Server ----------------------------------------------------------------------------------------------------------
-    local server = { db = {}, money = opts.money or 300, logs = {}, callbacks = {}, events = {} }
+    local server = { db = {}, money = opts.money or 300, logs = {}, callbacks = {}, events = {}, handlers = {} }
     world.server = server
 
     local S = newEnv({
@@ -153,7 +155,11 @@ function H.newWorld(opts)
         GetConvar = function(_, fallback) return fallback end,
         RegisterServerEvent = function(name, fn) if fn then server.events[name] = fn end end,
         RegisterNetEvent = function(name, fn) if fn then server.events[name] = fn end end,
-        AddEventHandler = function() end,
+        AddEventHandler = function(name, fn)
+            server.handlers[name] = server.handlers[name] or {}
+            table.insert(server.handlers[name], fn)
+        end,
+        GetEntityModel = function() return joaat(world.serverModel or "mp_m_freemode_01") end,
         exports = newExports(),
         _L = function(key) return key end,
     })
@@ -177,7 +183,14 @@ function H.newWorld(opts)
 
     H.load(S, "shared/config.lua")
     H.load(S, "shared/tattoos.lua")
+    H.load(S, "shared/creation_clothes.lua")
     H.load(S, "server/services/init.lua")
+    S.Services.Register("ClothingService", {
+        GiveFirstClothing = function(source, props, components)
+            server.firstClothing = { source = source, props = H.deepcopy(props), components = H.deepcopy(components) }
+        end,
+        GiveFromClientLists = function() end,
+    })
     H.load(S, "server/services/shop.lua")
     H.load(S, "server/services/appearance.lua")
     H.load(S, "server/server.lua")
@@ -187,6 +200,12 @@ function H.newWorld(opts)
         local fn = assert(server.callbacks[name], "no server callback " .. name)
         local args = H.deepcopy({ ... })
         return table.unpack(H.deepcopy({ fn(world.playerId, table.unpack(args)) }))
+    end
+
+    ---A local server event (AddEventHandler), every handler in order
+    function server.trigger(name, ...)
+        S.source = world.playerId
+        for _, fn in ipairs(server.handlers[name] or {}) do fn(...) end
     end
 
     function server.emit(name, ...)
@@ -314,6 +333,7 @@ function H.newClient(world)
     H.load(C, "shared/peds.lua")
     H.load(C, "shared/tattoos.lua")
     H.load(C, "shared/theme.lua")
+    H.load(C, "shared/creation_clothes.lua")
     H.load(C, "game/constants.lua")
     H.load(C, "game/declared_peds.lua")
     H.load(C, "game/declared_theme.lua")
