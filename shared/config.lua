@@ -98,6 +98,49 @@ Config.RandomOutfit = {
     PropChance = 0.35 -- chance of wearing each prop
 }
 
+-- Random face button of the appearance menu (Heritage-RP/PRODUCTION-SERVER#560), for the freemode models: the draw only
+-- picks from these lists, per sex, so the face stays believable. A server replaces them from one of its resources
+-- (`hrp_appearance_random_face '<path>.json'`, same shape, game/random_face.lua). Neutral defaults: every pair of
+-- parents by index, the base game's hair styles, natural hair and eye colours.
+-- Parents: { mother, father } head blend ids (21–41 and 45 are faces of women, 0–20 and 42–44 of men). Likeness: range
+-- of the mix (0 = the mother, 1 = the father); the skin follows the same mix, so the dominant parent gives it.
+-- FeatureRange: each face feature is drawn within ± this value around neutral (0). Opacities are { min, max } in 0–1.
+Config.RandomFace = {
+    FeatureRange = 0.25,
+    male = {
+        Parents = {
+            { 21, 0 }, { 22, 1 }, { 23, 2 }, { 24, 3 }, { 25, 4 }, { 26, 5 }, { 27, 6 }, { 28, 7 }, { 29, 8 }, { 30, 9 },
+            { 31, 10 }, { 32, 11 }, { 33, 12 }, { 34, 13 }, { 35, 14 }, { 36, 15 }, { 37, 16 }, { 38, 17 }, { 39, 18 },
+            { 40, 19 }, { 41, 20 },
+        },
+        Likeness = { 0.6, 0.9 },
+        HairStyles = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22 },
+        HairColors = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 },
+        Eyebrows = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 },
+        EyebrowsOpacity = { 0.7, 1.0 },
+        BeardChance = 0.5,
+        Beards = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 },
+        BeardOpacity = { 0.6, 1.0 },
+        EyeColors = { 0, 1, 2, 3, 4, 5, 6, 7, 8 },
+    },
+    female = {
+        Parents = {
+            { 21, 0 }, { 22, 1 }, { 23, 2 }, { 24, 3 }, { 25, 4 }, { 26, 5 }, { 27, 6 }, { 28, 7 }, { 29, 8 }, { 30, 9 },
+            { 31, 10 }, { 32, 11 }, { 33, 12 }, { 34, 13 }, { 35, 14 }, { 36, 15 }, { 37, 16 }, { 38, 17 }, { 39, 18 },
+            { 40, 19 }, { 41, 20 },
+        },
+        Likeness = { 0.1, 0.4 },
+        HairStyles = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23 },
+        HairColors = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 },
+        Eyebrows = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20 },
+        EyebrowsOpacity = { 0.6, 0.9 },
+        BeardChance = 0,
+        Beards = {},
+        BeardOpacity = { 0, 0 },
+        EyeColors = { 0, 1, 2, 3, 4, 5, 6, 7, 8 },
+    },
+}
+
 Config.DisableProps = {
     Hats = false,
     Glasses = false,

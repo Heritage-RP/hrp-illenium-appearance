@@ -70,6 +70,13 @@ server loads, and `hrp_ui_theme` + `hrp_appearance_theme '<path>.json'` for this
 `Config.Theme.themes` entry, `id` = the theme name) themes the menu, anything else keeps upstream's. Any started resource
 can add ped models to the ped menu with `hrp_appearance_ped '<model>'` lines in its `fxmanifest.lua`.
 
+The dice button of the menu draws a random face on a freemode character (only the sections the menu shows): parents, a
+likeness, face features close to neutral, hair, eyebrows, eyes and a beard with a chance, picked from the lists of
+`Config.RandomFace` per sex. A server gives its own lists from one of its resources: `hrp_appearance_random_face
+'<path>.json'` in its `fxmanifest.lua` (listed in its `files`), a JSON object of the same shape as `Config.RandomFace`;
+the first valid declaration of a started resource wins, an invalid one is skipped (game/random_face.lua checks every
+list). Each draw logs `random face drawn` (client, business).
+
 Other resources follow the editor on the client: the local events `illenium-appearance:client:customizationStarted` and
 `illenium-appearance:client:customizationEnded` (one argument, `saved`: false when the player left without saving), and
 `exports['illenium-appearance']:isPlayerCustomizing()`.

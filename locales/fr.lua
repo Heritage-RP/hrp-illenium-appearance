@@ -12,6 +12,10 @@ Locales["fr"] = {
             accept = "Oui",
             decline = "Non"
         },
+        buttons = {
+            randomOutfit = "Tenue au hasard",
+            randomFace = "Visage au hasard"
+        },
         ped = {
             title = "Ped",
             model = "Modèle"
