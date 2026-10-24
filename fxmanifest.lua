@@ -85,6 +85,7 @@ shared_scripts {
   "shared/tattoos.lua",
   "shared/theme.lua",
   "shared/creation_clothes.lua",
+  "shared/required_appearance.lua",
   "shared/framework/framework.lua",
   "shared/framework/esx/util.lua",
   "locales/locales.lua",

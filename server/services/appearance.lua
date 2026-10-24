@@ -21,6 +21,8 @@ local FREE_TATTOO_ZONE = "ZONE_HAIR"
 local freeEdits = {}
 ---playerId -> { charId, [zone .. "/" .. name] = true }: tattoos paid this session
 local paidTattoos = {}
+---playerId -> RequiredAppearance.settings: features imposed by another resource on every save of this player
+local requiredAppearances = {}
 ---charId -> jobs waiting for the save in progress: saves of a character run one after another, in order
 local queues = {}
 
@@ -62,6 +64,20 @@ end
 function AppearanceService.ForgetPlayer(playerId)
     freeEdits[playerId] = nil
     paidTattoos[playerId] = nil
+    requiredAppearances[playerId] = nil
+end
+
+---Features imposed on the character of a player until cleared or logout (shared/required_appearance.lua)
+---@param playerId number
+---@param required table|nil RequiredAppearance.settings, nil clears them
+function AppearanceService.SetRequired(playerId, required)
+    requiredAppearances[playerId] = required
+end
+
+---@param playerId number
+---@return table|nil RequiredAppearance.settings
+function AppearanceService.RequiredFor(playerId)
+    return requiredAppearances[playerId]
 end
 
 ---@return table|nil the free edit of this character, still running
@@ -162,9 +178,10 @@ end
 ---@param appearance any
 ---@param unrestricted boolean staff or free edit: any model, any tattoo of shared/tattoos.lua
 ---@param creationClothes table|nil character creation: the clothes it may wear (CreationClothes.settings)
+---@param required table|nil features imposed on this player (RequiredAppearance.settings)
 ---@return table|nil appearance
 ---@return string|nil reason
-function AppearanceService.Validate(playerId, charId, appearance, unrestricted, creationClothes)
+function AppearanceService.Validate(playerId, charId, appearance, unrestricted, creationClothes, required)
     if type(appearance) ~= "table" or type(appearance.model) ~= "string" then
         return nil, "malformed"
     end
@@ -181,6 +198,14 @@ function AppearanceService.Validate(playerId, charId, appearance, unrestricted, 
         if replaced > 0 then
             HrpLog.business.warn("appearance save: pieces outside the creation clothes put back",
                 { source = playerId, replaced = replaced })
+        end
+    end
+
+    -- Features imposed by another resource (PRODUCTION-SERVER#17): put back whatever the client sent
+    if required and RequiredAppearance.appliesTo(appearance.model) then
+        local changed = RequiredAppearance.apply(appearance, required)
+        if changed > 0 then
+            HrpLog.business.warn("appearance save: required features put back", { source = playerId, changed = changed })
         end
     end
 
@@ -262,8 +287,10 @@ function AppearanceService.SaveFromPlayer(playerId, appearance)
     local unrestricted = IsPlayerAceAllowed(playerId, STAFF_ACE) or edit ~= nil
     -- Character creation: only the simple pieces a server allows, when it declares them (shared/creation_clothes.lua)
     local creationClothes = edit and edit.creation and CreationClothes.current() or nil
+    local required = requiredAppearances[playerId]
     runInOrder(charId, function()
-        local checked, reason = AppearanceService.Validate(playerId, charId, appearance, unrestricted, creationClothes)
+        local checked, reason = AppearanceService.Validate(playerId, charId, appearance, unrestricted, creationClothes,
+            required)
         if not checked then
             HrpLog.business.warn("appearance save refused", { source = playerId, reason = reason })
             return

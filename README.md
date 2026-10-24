@@ -87,6 +87,14 @@ texture, a prop may be taken off). The server puts back a piece sent outside the
 gives no clothing item of it (shared/creation_clothes.lua). Shops are not limited. The editor logs `creation clothes
 limited` (client, business); a save put back logs `appearance save: pieces outside the creation clothes put back`.
 
+A server resource may impose features on a player's character (a rule of its world, a mark):
+`exports['illenium-appearance']:setRequiredAppearance(playerId, { eyeColor = 26, headOverlays = { ageing = { style =
+14, opacity = 1.0 } } })` (eye colour 0–31, head overlays by their appearance names, style 0–254, opacity 0–1; `nil`
+clears them, logout clears them; returns false for an invalid value or a player not connected). On a freemode ped the
+editor puts them on and holds their sliders on that value (random face and model change included), and every save of
+that player puts them back (`appearance save: required features put back`, server, business). Set them again after a
+restart of this resource (shared/required_appearance.lua).
+
 Other resources follow the editor on the client: the local events `illenium-appearance:client:customizationStarted` and
 `illenium-appearance:client:customizationEnded` (one argument, `saved`: false when the player left without saving), and
 `exports['illenium-appearance']:isPlayerCustomizing()`.
