@@ -70,6 +70,10 @@ server loads, and `hrp_ui_theme` + `hrp_appearance_theme '<path>.json'` for this
 `Config.Theme.themes` entry, `id` = the theme name) themes the menu, anything else keeps upstream's. Any started resource
 can add ped models to the ped menu with `hrp_appearance_ped '<model>'` lines in its `fxmanifest.lua`.
 
+Other resources follow the editor on the client: the local events `illenium-appearance:client:customizationStarted` and
+`illenium-appearance:client:customizationEnded` (one argument, `saved`: false when the player left without saving), and
+`exports['illenium-appearance']:isPlayerCustomizing()`.
+
 The menu's source is [Heritage-RP/hrp-illenium-appearance-ui](https://github.com/Heritage-RP/hrp-illenium-appearance-ui)
 (fork of iLLeniumStudios/illenium-appearance-source): build it there (`cd web && npm ci --legacy-peer-deps && npm test &&
 npm run build`), copy `web/dist/assets/index.<hash>.js` into `web/dist/assets/` here, delete the old bundle and update

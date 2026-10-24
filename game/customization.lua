@@ -636,6 +636,11 @@ local playerHeading
 function client.getHeading() return playerHeading end
 
 local callback
+-- Whether the editor is open: other resources follow it through the local events below (a scene light, a HUD to hide)
+local customizing = false
+
+function client.isPlayerCustomizing() return customizing end
+
 function client.startPlayerCustomization(cb, conf)
     repeat Wait(0) until IsScreenFadedIn() and not IsPlayerTeleportActive() and not IsPlayerSwitchInProgress()
 
@@ -666,6 +671,9 @@ function client.startPlayerCustomization(cb, conf)
             asynchronous = Config.AsynchronousLoading
         }
     }))
+
+    customizing = true
+    TriggerEvent("illenium-appearance:client:customizationStarted")
 end
 
 function client.exitPlayerCustomization(appearance)
@@ -694,6 +702,10 @@ function client.exitPlayerCustomization(appearance)
 
     RestorePlayerStats()
 
+    -- Before the callback: it may open the next step (a new character's spawn) or the editor again
+    customizing = false
+    TriggerEvent("illenium-appearance:client:customizationEnded", appearance ~= nil)
+
     if callback then
         callback(appearance)
     end
@@ -718,3 +730,4 @@ AddEventHandler("onResourceStop", function(resource)
 end)
 
 exports("startPlayerCustomization", client.startPlayerCustomization)
+exports("isPlayerCustomizing", client.isPlayerCustomizing)
