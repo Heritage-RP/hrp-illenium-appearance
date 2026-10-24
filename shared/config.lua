@@ -992,6 +992,11 @@ Config.Outfits = {
     }
 }
 
+-- Clothes the creation editor offers (shared/creation_clothes.lua, PRODUCTION-SERVER#561): false = every piece; or the
+-- lists per sex, `{ male = { components = { ["11"] = { 0, 5 } }, props = { ["0"] = { 5 } } }, female = { … } }`. A
+-- resource's `hrp_appearance_creation_clothes '<path>.json'` replaces it. A part left out keeps the starting clothes below.
+Config.CreationClothes = false
+
 Config.InitialPlayerClothes = {
     Male = {
         Model = "mp_m_freemode_01",

@@ -79,7 +79,7 @@ local CREATION_EDIT_MS = 60 * 60 * 1000
 local PEDMENU_EDIT_MS = 30 * 60 * 1000
 
 AddEventHandler("ox:createdCharacter", function(playerId, _, charId)
-    AppearanceService.AllowFreeEdit(playerId, charId, CREATION_EDIT_MS)
+    AppearanceService.AllowFreeEdit(playerId, charId, CREATION_EDIT_MS, false, true)
 end)
 
 AddEventHandler("ox:playerLogout", function(playerId)
@@ -94,6 +94,8 @@ end)
 -- The outfit comes from the client, so it is accepted once, for the character that was just created
 -- (PRODUCTION-SERVER#104 — before, any client could send it again and again to get clothes and bags).
 local awaitingFirstClothing = {}
+-- Model hash of the ped -> model name (shared/creation_clothes.lua reads the sex from it)
+local FREEMODE_MODELS = { [`mp_m_freemode_01`] = "mp_m_freemode_01", [`mp_f_freemode_01`] = "mp_f_freemode_01" }
 
 AddEventHandler("ox:createdCharacter", function(playerId, _, charId)
     awaitingFirstClothing[playerId] = charId
@@ -111,6 +113,21 @@ RegisterServerEvent("clothes:GiveFirstClothing", function(Props, Comps)
     local charId = awaitingFirstClothing[src]
     if not charId or charId ~= Framework.GetPlayerID(src) then return end
     awaitingFirstClothing[src] = nil
+
+    -- Only the pieces of the creation clothes, when a server declares them (shared/creation_clothes.lua, #561)
+    local settings = CreationClothes.current()
+    if settings then
+        local sex = CreationClothes.sexOf(FREEMODE_MODELS[GetEntityModel(GetPlayerPed(src))])
+        local droppedProps, droppedComps
+        Props, droppedProps = CreationClothes.filterItems(Props, CreationClothes.ITEM_PROPS, "props", settings, sex,
+            Config.InitialPlayerClothes)
+        Comps, droppedComps = CreationClothes.filterItems(Comps, CreationClothes.ITEM_COMPONENTS, "components", settings,
+            sex, Config.InitialPlayerClothes)
+        if droppedProps + droppedComps > 0 then
+            HrpLog.business.warn("starting clothes outside the creation clothes not given",
+                { source = src, dropped = droppedProps + droppedComps })
+        end
+    end
 
     ClothingService.GiveFirstClothing(src, Props, Comps)
 end)

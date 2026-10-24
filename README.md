@@ -77,6 +77,16 @@ likeness, face features close to neutral, hair, eyebrows, eyes and a beard with 
 the first valid declaration of a started resource wins, an invalid one is skipped (game/random_face.lua checks every
 list). Each draw logs `random face drawn` (client, business).
 
+A server may limit the editor of a new character to simple pieces: `hrp_appearance_creation_clothes '<path>.json'` in
+the `fxmanifest.lua` of one of its resources (listed in its `files`; `Config.CreationClothes` otherwise, `false` = no
+limit), the drawables allowed per sex for each clothing component and prop:
+`{ "male": { "components": { "11": [0, 5], "4": [1] }, "props": { "0": [5] } }, "female": { … } }` (component ids 1,
+3–11, prop ids 0, 1, 2, 6, 7; the first valid declaration of a started resource wins). A part the lists leave out loses
+its section and keeps the starting clothes (`Config.InitialPlayerClothes`), a listed part skips every other drawable (any
+texture, a prop may be taken off). The server puts back a piece sent outside the lists when it saves the creation and
+gives no clothing item of it (shared/creation_clothes.lua). Shops are not limited. The editor logs `creation clothes
+limited` (client, business); a save put back logs `appearance save: pieces outside the creation clothes put back`.
+
 Other resources follow the editor on the client: the local events `illenium-appearance:client:customizationStarted` and
 `illenium-appearance:client:customizationEnded` (one argument, `saved`: false when the player left without saving), and
 `exports['illenium-appearance']:isPlayerCustomizing()`.

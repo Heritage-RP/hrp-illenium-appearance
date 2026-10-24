@@ -179,6 +179,17 @@ local function propBlacklistMap(gender, propId)
     return {}
 end
 
+-- Clothes of the creation editor (shared/creation_clothes.lua): the lists while a new character's editor is open
+local creationClothes
+
+---Adds to the editor's blacklist the drawables the creation lists leave out for this part
+local function limitToCreationClothes(blacklist, sex, kind, id, min, max)
+    local lists = creationClothes and creationClothes[sex]
+    local blocked = lists and CreationClothes.blocked(lists, kind, id, min, max)
+    if not blocked then return end
+    for i = 1, #blocked do blacklist.drawables[#blacklist.drawables + 1] = blocked[i] end
+end
+
 local function getComponentSettings(ped, componentId)
     local drawableId = GetPedDrawableVariation(ped, componentId)
     local gender = client.getPedDecorationType()
@@ -190,6 +201,8 @@ local function getComponentSettings(ped, componentId)
 
     if client.isPedFreemodeModel(ped) then
         blacklistSettings = filterBlacklistSettings(componentBlacklistMap(gender, componentId), drawableId)
+        limitToCreationClothes(blacklistSettings, gender, "components", componentId, 0,
+            GetNumberOfPedDrawableVariations(ped, componentId) - 1)
     end
 
     return {
@@ -218,6 +231,8 @@ local function getPropSettings(ped, propId)
 
     if client.isPedFreemodeModel(ped) then
         blacklistSettings = filterBlacklistSettings(propBlacklistMap(gender, propId), drawableId)
+        limitToCreationClothes(blacklistSettings, gender, "props", propId, -1,
+            GetNumberOfPedPropDrawableVariations(ped, propId) - 1)
     end
 
     local settings = {
@@ -674,8 +689,38 @@ local customizing = false
 
 function client.isPlayerCustomizing() return customizing end
 
+---Creation editor limited to a server's simple pieces (conf.creationClothes, shared/creation_clothes.lua): the parts
+---the lists leave out lose their section (they keep the starting clothes), a listed part worn outside its list takes
+---its first allowed piece
+local function startCreationClothes(conf)
+    creationClothes = conf and conf.creationClothes or nil
+    local ped = cache.ped
+    local lists = creationClothes and client.isPedFreemodeModel(ped) and creationClothes[client.getPedDecorationType()]
+    if not lists then return end
+    for id, key in pairs(COMPONENT_CONFIG_KEYS) do
+        if not lists.components[id] then conf.componentConfig[key] = false end
+    end
+    for id, key in pairs(PROP_CONFIG_KEYS) do
+        if not lists.props[id] then conf.propConfig[key] = false end
+    end
+    for id in pairs(lists.components) do
+        local drawable, texture = CreationClothes.replacement(lists, "components", id, GetPedDrawableVariation(ped, id))
+        if drawable then client.setPedComponent(ped, { component_id = id, drawable = drawable, texture = texture }) end
+    end
+    for id in pairs(lists.props) do
+        local drawable, texture = CreationClothes.replacement(lists, "props", id, GetPedPropIndex(ped, id))
+        if drawable then client.setPedProp(ped, { prop_id = id, drawable = drawable, texture = texture }) end
+    end
+    local parts = 0
+    for _ in pairs(lists.components) do parts += 1 end
+    for _ in pairs(lists.props) do parts += 1 end
+    HrpLog.business.info("creation clothes limited", { parts = parts })
+end
+
 function client.startPlayerCustomization(cb, conf)
     repeat Wait(0) until IsScreenFadedIn() and not IsPlayerTeleportActive() and not IsPlayerSwitchInProgress()
+
+    startCreationClothes(conf)
 
     playerAppearance = client.getPedAppearance(cache.ped)
     tattooBought = false
@@ -745,6 +790,7 @@ function client.exitPlayerCustomization(appearance)
 
     callback = nil
     config = nil
+    creationClothes = nil
     playerAppearance = nil
     tattooBought = false
     playerCoords = nil
