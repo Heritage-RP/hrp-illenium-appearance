@@ -204,7 +204,7 @@ end
 function H.newClient(world)
     local server = world.server
     local ped = { model = joaat(world.model or "mp_m_freemode_01"), decorations = {} }
-    local c = { ped = ped, nui = {}, sent = {}, logs = {} }
+    local c = { ped = ped, nui = {}, sent = {}, logs = {}, events = {} }
     local function resource(name)
         for _, r in ipairs(world.resources) do
             if r.name == name then return r end
@@ -286,6 +286,10 @@ function H.newClient(world)
         RegisterNUICallback = function(name, fn) c.nui[name] = fn end,
         RegisterNetEvent = function() end,
         AddEventHandler = function() end,
+        -- Local events (game/customization.lua tells other resources the editor opened and closed)
+        TriggerEvent = function(name, ...)
+            c.events[#c.events + 1] = { name = name, args = { ... } }
+        end,
         TriggerServerEvent = function(name, ...)
             c.sent[#c.sent + 1] = name
             server.emit(name, ...)

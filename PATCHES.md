@@ -19,6 +19,7 @@ server sets its own values through convars or other resources (Heritage-RP/PRODU
 | Tattoo shop: each tattoo paid once, bought tattoos kept on the character | generic | candidate | `game/customization.lua`, `game/nui.lua`, `game/util.lua`, `client/client.lua`, `server/server.lua`, `server/services/shop.lua`, `server/services/appearance.lua`, `web/dist/assets/*.js` |
 | Menu theme from the replicated convar `hrp_ui_theme`: the theme a started resource declares (`hrp_ui_theme '<path>/<name>.css'` loaded by the page, its `--hrp-*` tokens for the themed rules; `hrp_appearance_theme '<path>.json'` for the menu values), PRODUCTION-SERVER#520 | generic | no | `game/declared_theme.lua`, `shared/theme.lua`, `game/nui.lua`, `web/dist/index.html`, `fxmanifest.lua` |
 | Ped models declared by other resources (`hrp_appearance_ped '<model>'` in their fxmanifest) | generic | no | `game/declared_peds.lua`, `game/customization.lua`, `game/util.lua`, `fxmanifest.lua` |
+| Editor open / closed for other resources: local client events `illenium-appearance:client:customizationStarted` and `customizationEnded` (`saved`), export `isPlayerCustomizing` (PRODUCTION-SERVER#558) | generic | candidate | `game/customization.lua`, `tests/lua/harness.lua`, `tests/lua/customization_events_spec.lua` |
 | Beta-test bounties read by hrp-bounty | generic | no | `bounties.json`, `fxmanifest.lua` |
 | Tests (Lua 5.4 in docker, `tests/run.sh`) | generic | no | `tests/**` |
 | Documentation of the fork | generic | no | `README.md`, `PATCHES.md` |
