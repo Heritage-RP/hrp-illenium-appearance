@@ -483,6 +483,39 @@ function client.randomizeOutfit(ped)
     end
 end
 
+--- Puts a random face on a freemode ped (game/random_face.lua): only the sections open in the current menu (parents,
+--- face features, then hair, eyebrows, beard and eyes with the head overlays), hair blacklist respected
+function client.randomizeFace(ped)
+    if not config or not client.isPedFreemodeModel(ped) then return end
+    local settings = RandomFace.current()
+    local lists = settings and settings[client.getPedDecorationType()]
+    if not lists then return end
+
+    local hairAllowed
+    if config.headOverlays then
+        local hair = getHairSettings(ped)
+        local blocked = {}
+        for _, style in ipairs(hair.blacklist.drawables) do blocked[style] = true end
+        hairAllowed = function(style) return style <= hair.style.max and not blocked[style] end
+    end
+    local face = RandomFace.roll(lists, settings.FeatureRange, constants.FACE_FEATURES, math.random, hairAllowed)
+
+    if config.headBlend then client.setPedHeadBlend(ped, face.headBlend) end
+    if config.faceFeatures then client.setPedFaceFeatures(ped, face.faceFeatures) end
+    if config.headOverlays then
+        if face.hair then client.setPedHair(ped, face.hair) end
+        local overlays = client.getPedAppearance(ped).headOverlays
+        overlays.eyebrows = face.eyebrows
+        overlays.beard = face.beard
+        client.setPedHeadOverlays(ped, overlays)
+        client.setPedEyeColor(ped, face.eyeColor)
+    end
+    HrpLog.business.info("random face drawn", {
+        headBlend = config.headBlend == true, faceFeatures = config.faceFeatures == true,
+        headOverlays = config.headOverlays == true,
+    })
+end
+
 local isCameraInterpolating
 local currentCamera
 local cameraHandle

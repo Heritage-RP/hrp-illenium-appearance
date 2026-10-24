@@ -132,6 +132,15 @@ RegisterNUICallback("appearance_random_outfit", function(_, cb)
     })
 end)
 
+RegisterNUICallback("appearance_random_face", function(_, cb)
+    client.randomizeFace(cache.ped)
+
+    cb({
+        appearanceSettings = client.getAppearanceSettings(),
+        appearanceData = client.getPedAppearance(cache.ped)
+    })
+end)
+
 RegisterNUICallback("appearance_save", function(appearance, cb)
     cb(1)
     client.wearClothes(appearance, "head")

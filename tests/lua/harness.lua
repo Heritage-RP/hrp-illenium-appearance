@@ -224,6 +224,7 @@ function H.newClient(world)
             end,
         },
         cache = { ped = 101, playerId = 1, vehicle = false },
+        HrpLog = newLog(c.logs),
         LocalPlayer = { state = {} },
         GetConvar = function(name, fallback)
             local value = world.convars[name]
@@ -316,6 +317,7 @@ function H.newClient(world)
     H.load(C, "game/constants.lua")
     H.load(C, "game/declared_peds.lua")
     H.load(C, "game/declared_theme.lua")
+    H.load(C, "game/random_face.lua")
     local f = io.open("game/tattoo_list.lua", "r")
     if f then
         f:close()

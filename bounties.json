@@ -32,6 +32,33 @@
           "log": { "resource": "illenium-appearance", "msg": "appearance saved" }
         }
       ]
+    },
+    {
+      "id": "appearance-random-face",
+      "version": 1,
+      "title": "Visage au hasard",
+      "summary": "Créer un personnage en tirant son visage au hasard dans l'éditeur d'apparence : un visage crédible en un clic, puis un détail ajusté à la main (illenium-appearance — #560).",
+      "steps": [
+        "Créez un nouveau personnage jusqu'à l'éditeur d'apparence.",
+        "Cliquez plusieurs fois le bouton dé (« Visage au hasard », parmi les boutons caméra, rotation et enregistrement de l'éditeur) : parents, traits, coiffure, sourcils, yeux et parfois barbe changent, sans visage difforme.",
+        "Ajustez un détail à la main (par exemple la couleur des cheveux), puis enregistrez l'apparence.",
+        "Bonus : signalez avec /bug un tirage qui donne un visage peu crédible (capture d'écran si possible)."
+      ],
+      "resources": ["illenium-appearance", "hrp-character-selector"],
+      "reward": 5,
+      "timeLimitMinutes": 20,
+      "objectives": [
+        {
+          "id": "drawn",
+          "label": "Visage tiré au hasard",
+          "log": { "resource": "illenium-appearance", "msg": "random face drawn", "side": "client" }
+        },
+        {
+          "id": "saved",
+          "label": "Apparence enregistrée",
+          "log": { "resource": "illenium-appearance", "msg": "appearance saved" }
+        }
+      ]
     }
   ]
 }
