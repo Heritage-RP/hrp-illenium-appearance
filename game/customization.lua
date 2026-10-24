@@ -181,6 +181,8 @@ end
 
 -- Clothes of the creation editor (shared/creation_clothes.lua): the lists while a new character's editor is open
 local creationClothes
+-- Features the server imposes on this character (shared/required_appearance.lua), read when the editor opens
+local requiredAppearance
 
 ---Adds to the editor's blacklist the drawables the creation lists leave out for this part
 local function limitToCreationClothes(blacklist, sex, kind, id, min, max)
@@ -403,7 +405,7 @@ local function getAppearanceSettings()
         max = 30
     }
 
-    return {
+    local settings = {
         ped = ped,
         components = components,
         props = props,
@@ -414,6 +416,8 @@ local function getAppearanceSettings()
         eyeColor = eyeColor,
         tattoos = tattoos
     }
+    if client.isPedFreemodeModel(cache.ped) then RequiredAppearance.lockSettings(settings, requiredAppearance) end
+    return settings
 end
 client.getAppearanceSettings = getAppearanceSettings
 
@@ -525,6 +529,7 @@ function client.randomizeFace(ped)
         client.setPedHeadOverlays(ped, overlays)
         client.setPedEyeColor(ped, face.eyeColor)
     end
+    client.applyRequiredAppearance(ped)
     HrpLog.business.info("random face drawn", {
         headBlend = config.headBlend == true, faceFeatures = config.faceFeatures == true,
         headOverlays = config.headOverlays == true,
@@ -689,6 +694,31 @@ local customizing = false
 
 function client.isPlayerCustomizing() return customizing end
 
+---Puts the features the server imposes on a freemode ped (head overlays, eye colour)
+function client.applyRequiredAppearance(ped)
+    if not requiredAppearance or not client.isPedFreemodeModel(ped) then return end
+    local appearance = client.getPedAppearance(ped)
+    if RequiredAppearance.apply(appearance, requiredAppearance) == 0 then return end
+    client.setPedHeadOverlays(ped, appearance.headOverlays)
+    client.setPedEyeColor(ped, appearance.eyeColor)
+end
+
+---What the menu sends, held on the imposed features
+function client.requiredHeadOverlays(headOverlays)
+    RequiredAppearance.apply({ headOverlays = headOverlays }, requiredAppearance)
+    return headOverlays
+end
+
+function client.requiredEyeColor(eyeColor)
+    return requiredAppearance and requiredAppearance.eyeColor or eyeColor
+end
+
+---The features the server imposes on this character (nil: none, or no answer)
+local function fetchRequiredAppearance()
+    local ok, required = pcall(lib.callback.await, "illenium-appearance:server:getRequiredAppearance", false)
+    return ok and RequiredAppearance.settings(required) or nil
+end
+
 ---Creation editor limited to a server's simple pieces (conf.creationClothes, shared/creation_clothes.lua): the parts
 ---the lists leave out lose their section (they keep the starting clothes), a listed part worn outside its list takes
 ---its first allowed piece
@@ -722,6 +752,12 @@ function client.startPlayerCustomization(cb, conf)
 
     startCreationClothes(conf)
 
+    -- Before the entry snapshot: the menu starts from the imposed features
+    requiredAppearance = fetchRequiredAppearance()
+    if requiredAppearance then
+        client.applyRequiredAppearance(cache.ped)
+        HrpLog.business.info("required appearance held", { freemode = client.isPedFreemodeModel(cache.ped) })
+    end
     playerAppearance = client.getPedAppearance(cache.ped)
     tattooBought = false
     playerCoords = GetEntityCoords(cache.ped, true)
@@ -791,6 +827,7 @@ function client.exitPlayerCustomization(appearance)
     callback = nil
     config = nil
     creationClothes = nil
+    requiredAppearance = nil
     playerAppearance = nil
     tattooBought = false
     playerCoords = nil

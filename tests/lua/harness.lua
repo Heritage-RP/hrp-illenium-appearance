@@ -2,13 +2,14 @@
 -- server (PRODUCTION-SERVER#12). Run every spec with tests/run.sh (docker, nickblah/lua:5.4).
 --
 -- Each side gets its own environment (_ENV), like FiveM gives each script runtime its own globals:
---   client: shared/{config,blacklist,peds,tattoos,theme,creation_clothes}.lua, game/*.lua, client/defaults.lua, client/common.lua,
+--   client: shared/{config,blacklist,peds,tattoos,theme,creation_clothes,required_appearance}.lua, game/*.lua, client/defaults.lua, client/common.lua,
 --           client/client.lua
 -- H.newWorld options: money, charId, staff, convars (client convars by name: hrp_ui_theme…), resources (the started
 -- resources the client sees: { name, state = "started", peds = { "<hrp_appearance_ped value>", … },
 -- metadata = { [key] = { "<value>", … } }, files = { [path] = <decoded JSON table> } }).
---   server: shared/config.lua, shared/tattoos.lua, shared/creation_clothes.lua, server/services/{init,shop,appearance}.lua,
---           server/server.lua, server/permissions.lua; ClothingService is a fake that keeps what it was asked to give
+--   server: shared/config.lua, shared/tattoos.lua, shared/creation_clothes.lua, shared/required_appearance.lua,
+--           server/services/{init,shop,appearance}.lua, server/server.lua, server/permissions.lua; server.exports holds
+--           the exports it declares; ClothingService is a fake that keeps what it was asked to give
 --           (server.firstClothing), server.trigger runs the local events (ox:createdCharacter…), world.serverModel is
 --           the model the server sees on the player's ped
 -- Natives nobody fakes below are no-ops returning 0 (truthy in Lua, like a model "in cdimage" or "loaded"); they are
@@ -143,7 +144,7 @@ function H.newWorld(opts)
     local world = { charId = opts.charId or 42, playerId = 1, convars = opts.convars or {}, resources = opts.resources or {} }
 
     -- Server ----------------------------------------------------------------------------------------------------------
-    local server = { db = {}, money = opts.money or 300, logs = {}, callbacks = {}, events = {}, handlers = {} }
+    local server = { db = {}, money = opts.money or 300, logs = {}, callbacks = {}, events = {}, handlers = {}, exports = {} }
     world.server = server
 
     local S = newEnv({
@@ -160,7 +161,10 @@ function H.newWorld(opts)
             table.insert(server.handlers[name], fn)
         end,
         GetEntityModel = function() return joaat(world.serverModel or "mp_m_freemode_01") end,
-        exports = newExports(),
+        exports = setmetatable({}, {
+            __call = function(_, name, fn) server.exports[name] = fn end,
+            __index = function() return setmetatable({}, { __index = function() return stub end }) end,
+        }),
         _L = function(key) return key end,
     })
     S.lib = newLib(server.callbacks, function() error("server-side lib.callback.await is not faked") end)
@@ -184,6 +188,7 @@ function H.newWorld(opts)
     H.load(S, "shared/config.lua")
     H.load(S, "shared/tattoos.lua")
     H.load(S, "shared/creation_clothes.lua")
+    H.load(S, "shared/required_appearance.lua")
     H.load(S, "server/services/init.lua")
     S.Services.Register("ClothingService", {
         GiveFirstClothing = function(source, props, components)
@@ -222,7 +227,8 @@ end
 ---A game client: the real game/ and client/ files with a fake ped, NUI and ox_lib
 function H.newClient(world)
     local server = world.server
-    local ped = { model = joaat(world.model or "mp_m_freemode_01"), decorations = {} }
+    -- overlays: head overlay index -> { style, opacity } set on the ped (none = 255, like the game)
+    local ped = { model = joaat(world.model or "mp_m_freemode_01"), decorations = {}, overlays = {}, eyeColor = 0 }
     local c = { ped = ped, nui = {}, sent = {}, logs = {}, events = {} }
     local function resource(name)
         for _, r in ipairs(world.resources) do
@@ -283,7 +289,16 @@ function H.newClient(world)
         HasAnimDictLoaded = function() return true end,
         IsPedFalling = function() return false end,
         IsPedCuffed = function() return false end,
-        GetPedHeadOverlayData = function() return true, 255, 0, 0, 0, 0 end,
+        GetPedHeadOverlayData = function(_, index)
+            local overlay = ped.overlays[index]
+            if not overlay then return true, 255, 0, 0, 0, 0 end
+            return true, overlay.style, 0, 0, 0, overlay.opacity
+        end,
+        SetPedHeadOverlay = function(_, index, style, opacity)
+            ped.overlays[index] = { style = style, opacity = opacity }
+        end,
+        GetPedEyeColor = function() return ped.eyeColor end,
+        SetPedEyeColor = function(_, color) ped.eyeColor = color end,
         GetEntityCoords = function() return vector(0, 0, 0) end,
         GetOffsetFromEntityInWorldCoords = function() return vector(0, 0, 0) end,
         Citizen = setmetatable({
@@ -293,6 +308,8 @@ function H.newClient(world)
         SetPlayerModel = function(_, model)
             ped.model = model
             ped.decorations = {} -- a new ped
+            ped.overlays = {}
+            ped.eyeColor = 0
         end,
         ClearPedDecorations = function() ped.decorations = {} end,
         -- The Lua wrapper hashes string arguments of Hash parameters (_ch in citizen/scripting/lua/natives_*.lua)
@@ -334,6 +351,7 @@ function H.newClient(world)
     H.load(C, "shared/tattoos.lua")
     H.load(C, "shared/theme.lua")
     H.load(C, "shared/creation_clothes.lua")
+    H.load(C, "shared/required_appearance.lua")
     H.load(C, "game/constants.lua")
     H.load(C, "game/declared_peds.lua")
     H.load(C, "game/declared_theme.lua")

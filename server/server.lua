@@ -90,6 +90,35 @@ AddEventHandler("playerDropped", function()
     AppearanceService.ForgetPlayer(source)
 end)
 
+-- Features another resource imposes on a player's character (PRODUCTION-SERVER#17, shared/required_appearance.lua):
+-- the editor shows them fixed, every save of that player keeps them. Cleared at logout (above).
+lib.callback.register("illenium-appearance:server:getRequiredAppearance", function(source)
+    return AppearanceService.RequiredFor(source)
+end)
+
+---Imposes features on the character of a player until cleared or the player logs out (a rule of another resource,
+---e.g. marks its world puts on some characters): the editor holds them, every appearance save puts them back.
+---@param playerId number server id of the player
+---@param required table|nil `{ eyeColor = 0-31, headOverlays = { [name] = { style = 0-254, opacity = 0-1 } } }`, nil
+---clears them
+---@return boolean false when the player is not connected or `required` is invalid (nothing changed)
+exports("setRequiredAppearance", function(playerId, required)
+    local id = tonumber(playerId)
+    if not id or not GetPlayerName(id) then return false end
+    local settings = nil
+    if required ~= nil then
+        settings = RequiredAppearance.settings(required)
+        if not settings then
+            HrpLog.api.warn("invalid required appearance", { source = id, resource = GetInvokingResource() })
+            return false
+        end
+    end
+    AppearanceService.SetRequired(id, settings)
+    HrpLog.business.info(settings and "required appearance set" or "required appearance cleared",
+        { source = id, resource = GetInvokingResource() })
+    return true
+end)
+
 -- Characters created this session that have not received their starting outfit yet: playerId -> charId.
 -- The outfit comes from the client, so it is accepted once, for the character that was just created
 -- (PRODUCTION-SERVER#104 — before, any client could send it again and again to get clothes and bags).

@@ -34,6 +34,8 @@ end)
 
 RegisterNUICallback("appearance_change_model", function(model, cb)
     local playerPed = client.setPlayerModel(model)
+    -- A new ped: the features imposed on the character go back on it
+    client.applyRequiredAppearance(playerPed)
 
     SetEntityHeading(cache.ped, client.getHeading())
     SetEntityInvincible(playerPed, true)
@@ -67,7 +69,7 @@ end)
 
 RegisterNUICallback("appearance_change_head_overlay", function(headOverlays, cb)
     cb(1)
-    client.setPedHeadOverlays(cache.ped, headOverlays)
+    client.setPedHeadOverlays(cache.ped, client.requiredHeadOverlays(headOverlays))
 end)
 
 RegisterNUICallback("appearance_change_hair", function(hair, cb)
@@ -77,7 +79,7 @@ end)
 
 RegisterNUICallback("appearance_change_eye_color", function(eyeColor, cb)
     cb(1)
-    client.setPedEyeColor(cache.ped, eyeColor)
+    client.setPedEyeColor(cache.ped, client.requiredEyeColor(eyeColor))
 end)
 
 -- One purchase at a time: a double click on "Apply" sent the same purchase twice (PRODUCTION-SERVER#12)
